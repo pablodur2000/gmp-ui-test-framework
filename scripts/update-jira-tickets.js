@@ -44,7 +44,8 @@ const TICKETS = {
   'QA_TICKET_QA_32_ADMIN_LOGIN_PASSWORD_VISIBILITY_TOGGLE.md': 'QA-32'
 };
 
-const TICKETS_PATH = path.join(__dirname, JIRA_TICKETS_PATH);
+// Resolve from repo root (parent of scripts/)
+const TICKETS_PATH = path.join(__dirname, '..', JIRA_TICKETS_PATH);
 
 /**
  * Make HTTP request to Jira API

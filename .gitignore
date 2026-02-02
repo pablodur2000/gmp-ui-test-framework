@@ -18,6 +18,10 @@ node_modules/
 *.log
 npm-debug.log*
 
+# Project (optional / local)
+possible_tickets/
+Progress reports/
+
 # OS
 .DS_Store
 Thumbs.db

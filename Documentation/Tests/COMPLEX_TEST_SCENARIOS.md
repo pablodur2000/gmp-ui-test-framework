@@ -313,7 +313,7 @@ expect(page.url()).toMatch(/\/admin\/login/);
 // SECTION 4: Test Valid Login
 // ============================================================================
 const validEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
-const validPassword = process.env.ADMIN_PASSWORD || 'password123';
+const validPassword = process.env.ADMIN_PASSWORD || 'your-admin-password';
 
 await emailInput.fill(validEmail);
 await passwordInput.fill(validPassword);

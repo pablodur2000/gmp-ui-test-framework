@@ -6,6 +6,13 @@ This document defines the **global rules, conventions, and best practices** for 
 
 **Target Audience**: Developers, QA Engineers, AI Agents, and Contributors
 
+## 📚 Quick Links
+
+- **Creating a new test?** → See [TEST_CREATION_GUIDE.md](TEST_CREATION_GUIDE.md) (complete step-by-step guide)
+- **Test patterns and examples?** → See [../Tests/TEST_IMPLEMENTATION_PATTERNS.md](../Tests/TEST_IMPLEMENTATION_PATTERNS.md)
+- **Common issues?** → See [../Tests/COMMON_PITFALLS_AND_SOLUTIONS.md](../Tests/COMMON_PITFALLS_AND_SOLUTIONS.md)
+- **Quick reference?** → See [../Tests/QUICK_REFERENCE_GUIDE.md](../Tests/QUICK_REFERENCE_GUIDE.md)
+
 ---
 
 ## 📁 Project Structure
@@ -58,32 +65,38 @@ tests/
 
 ## 🧪 Test Structure Rules
 
-### 1. Always Use Step Executor Pattern
+### ⚠️ IMPORTANT: Test Creation Guide
 
-**REQUIRED**: All tests must use `step` and `stepGroup` from `step-executor.ts`
+**For creating new tests, refer to:** `TEST_CREATION_GUIDE.md` (single source of truth)
 
-**Why**: Provides structured logging, error handling, and future auto-documentation support.
+This guide includes:
+- Complete file template
+- Selector patterns
+- Waiting patterns
+- API verification
+- Interaction patterns
+- Error handling
+- Complete examples
+
+### 1. Test File Structure
+
+**REQUIRED**: Use section comments for organization (NOT step executor)
+
+**Why**: Cleaner, more readable, easier to maintain. Direct Playwright code with clear sections.
 
 **Example**:
 ```typescript
-import { step, stepGroup } from '../../../utils/step-executor';
+// ============================================================================
+// SETUP: Navigate to page
+// ============================================================================
+await navigateToHome(page);
+await page.waitForLoadState('networkidle');
 
-await stepGroup('Step 1: Hero Section Verification', [
-  {
-    name: 'Verify hero section is visible',
-    action: async () => {
-      const heroSection = page.locator(TestSelectors.homeHeroSection);
-      await expect(heroSection).toBeVisible();
-    }
-  },
-  {
-    name: 'Verify hero title text',
-    action: async () => {
-      const title = page.locator(TestSelectors.homeHeroTitle);
-      await expect(title).toBeVisible();
-    }
-  }
-]);
+// ============================================================================
+// SECTION 1: Page Load Verification
+// ============================================================================
+const heroSection = page.locator(TestSelectors.homeHeroSection);
+await expect(heroSection).toBeVisible();
 ```
 
 ### 2. Test File Template
@@ -92,56 +105,64 @@ await stepGroup('Step 1: Hero Section Verification', [
 
 ```typescript
 import { test, expect } from '@playwright/test';
-import { step, stepGroup } from '../../../utils/step-executor';
 import { navigateToHome } from '../../../utils/navigation';
 import { TestSelectors } from '../../../utils/selectors';
+import { trackPageLoad, monitorAndCheckConsoleErrors } from '../../../utils';
 
 /**
- * [Test Description]
+ * [Test Type] - [Test Name] ([QA-Ticket])
  * 
- * [Detailed description of what the test verifies]
+ * [Comprehensive description of what the test verifies]
  * 
- * Based on: [QA_TICKET_REFERENCE].md
+ * Based on: QA_TICKET_[NUMBER]_[NAME].md
+ * Parent Epic: [EPIC-NUMBER]
  * 
  * Test Strategy:
- * - [Key testing points]
  * - Desktop viewport only (1920x1080)
  * - Estimated execution time: [X-Y] seconds
+ * - [Key testing points]
  * 
  * Tags: @e2e, @public, @[area], @[feature], @desktop, @development, @staging, @production
  */
 test.describe('[Test Suite Name]', () => {
   test('should [expected behavior]', {
-    tag: ['@e2e', '@public', '@[area]', '@desktop'],
+    tag: ['@e2e', '@public', '@[area]', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
-    // Setup
-    await stepGroup('Setup - [Description]', [
-      // Setup steps
-    ]);
+    // ============================================================================
+    // SETUP: [Setup description]
+    // ============================================================================
+    await navigateToHome(page);
+    await page.waitForLoadState('networkidle');
 
-    // Test Steps
-    await stepGroup('Step 1: [Description]', [
-      // Test steps
-    ]);
+    // ============================================================================
+    // SECTION 1: [Section Name]
+    // ============================================================================
+    // Test code here
 
-    // More steps...
+    // ============================================================================
+    // SECTION 2: [Section Name]
+    // ============================================================================
+    // More test code
   });
 });
 ```
 
+**See `TEST_CREATION_GUIDE.md` for complete template and examples.**
+
 ### 3. Test Organization
 
-**REQUIRED**: Tests must be organized into logical step groups:
+**REQUIRED**: Tests must be organized into clear sections:
 
-1. **Setup** - Navigation, initialization, performance tracking
-2. **Step 1-N** - Main test steps (numbered sequentially)
+1. **SETUP** - Navigation, initialization, performance tracking
+2. **SECTION 1-N** - Main test sections (descriptive names)
 3. **Cleanup** - Only if needed (most tests are read-only)
 
-**Each step group should have a clear, descriptive name**:
-- ✅ `Step 1: Hero Section Content Verification`
-- ✅ `Step 2: Carousel Auto-Advance Verification`
-- ❌ `Step 1: Test stuff`
-- ❌ `Step 2: More tests`
+**Each section should have a clear, descriptive name**:
+- ✅ `SECTION 1: Page Load and Performance Verification`
+- ✅ `SECTION 2: Product Display Verification`
+- ✅ `SECTION 3: Filter Functionality`
+- ❌ `SECTION 1: Test stuff`
+- ❌ `SECTION 2: More tests`
 
 ---
 

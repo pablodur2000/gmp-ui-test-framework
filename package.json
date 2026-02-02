@@ -20,10 +20,11 @@
     "test:production:ui": "cross-env BASE_URL=https://pablodur2000.github.io/gmp-web-app npx playwright install --with-deps chromium && cross-env BASE_URL=https://pablodur2000.github.io/gmp-web-app npx playwright test --ui",
     "test:local:pwsh": "powershell -Command \"$env:BASE_URL='http://localhost:3000/gmp-web-app'; npx playwright install --with-deps chromium; npx playwright test --ui\"",
     "test:production:pwsh": "powershell -Command \"$env:BASE_URL='https://pablodur2000.github.io/gmp-web-app'; npx playwright install --with-deps chromium; npx playwright test --ui\"",
-    "update-jira": "node update-jira-tickets.js",
-    "update-ticket-status": "node update-ticket-status.js",
-    "create-epics": "node create-all-epics.js",
-    "create-ticket": "node create-ticket-from-md.js"
+    "update-jira": "node scripts/update-jira-tickets.js",
+    "update-ticket-status": "node scripts/update-ticket-status.js",
+    "create-epics": "node scripts/create-all-epics.js",
+    "create-ticket": "node scripts/create-ticket-from-md.js",
+    "analyze-qa-board": "node scripts/analyze-qa-board.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",

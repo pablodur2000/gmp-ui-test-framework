@@ -385,9 +385,11 @@ async function main() {
     }
     
     for (const filePath of files) {
+      // Resolve relative paths from repo root (parent of scripts/)
+      const rootDir = path.join(__dirname, '..');
       const fullPath = path.isAbsolute(filePath) 
         ? filePath 
-        : path.join(__dirname, filePath);
+        : path.join(rootDir, filePath);
       
       console.log(`📋 Processing: ${filePath}...`);
       
