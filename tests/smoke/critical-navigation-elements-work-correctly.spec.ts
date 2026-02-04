@@ -17,11 +17,11 @@ import { waitForHoverEffect } from '../utils/wait-helpers';
  * - Desktop viewport only (1920x1080)
  * - Navigation interactions and hover states
  * 
- * Tags: @smoke, @navigation, @desktop, @development, @staging, @production
+ * Tags: @regression, @smoke, @navigation, @desktop, @development, @staging, @production
  */
 test.describe('Smoke Test - Critical Navigation Elements', () => {
   test('should have working navigation elements with dropdowns and hover states', {
-    tag: ['@smoke', '@navigation', '@desktop', '@development', '@staging', '@production'],
+    tag: ['@regression', '@smoke', '@navigation', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
     // ============================================================================
     // SETUP: Navigate to home page and wait for animations
@@ -30,7 +30,7 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     await page.waitForLoadState('networkidle');
     
     // Wait for header to be visible and stable (after first visit animation)
-    const header = page.locator(TestSelectors.header).or(page.locator('header'));
+    const header = page.locator(TestSelectors.header);
     await expect(header).toBeVisible();
     
     // Wait for header animation to complete by checking it's in final state
@@ -65,7 +65,7 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     await page.waitForLoadState('networkidle');
 
     // Re-scope logo to current page header after navigation
-    const headerAfterNav = page.locator(TestSelectors.header).or(page.locator('header'));
+    const headerAfterNav = page.locator(TestSelectors.header);
     const logoAfterNav = headerAfterNav.locator(TestSelectors.headerLogo);
     await expect(logoAfterNav).toBeVisible();
     await logoAfterNav.click();
@@ -75,14 +75,10 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     // SECTION 2: Verify Navigation Links
     // ============================================================================
     // Scope navigation links to header nav area to avoid matching footer/mobile menu
-    const headerNav = header.locator('nav').or(header.locator('[data-testid*="nav"]'));
+    const headerNav = header.locator(TestSelectors.headerNav);
     
-    const homeLink = headerNav.locator(TestSelectors.headerNavHomeLink).or(
-      headerNav.getByRole('button', { name: /inicio|home/i }).first()
-    );
-    const catalogLink = headerNav.locator(TestSelectors.headerNavCatalogLink).or(
-      headerNav.getByRole('button', { name: /catálogo|catalog/i }).first()
-    );
+    const homeLink = headerNav.locator(TestSelectors.headerNavHomeLink);
+    const catalogLink = headerNav.locator(TestSelectors.headerNavCatalogLink);
 
     await expect(homeLink).toBeVisible();
     await expect(catalogLink).toBeVisible();
@@ -94,11 +90,9 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     await page.waitForLoadState('networkidle');
 
     // Re-scope links after navigation
-    const headerAfterClick = page.locator(TestSelectors.header).or(page.locator('header'));
-    const headerNavAfterClick = headerAfterClick.locator('nav').or(headerAfterClick.locator('[data-testid*="nav"]'));
-    const catalogLinkAfterClick = headerNavAfterClick.locator(TestSelectors.headerNavCatalogLink).or(
-      headerNavAfterClick.getByRole('button', { name: /catálogo|catalog/i }).first()
-    );
+    const headerAfterClick = page.locator(TestSelectors.header);
+    const headerNavAfterClick = headerAfterClick.locator(TestSelectors.headerNav);
+    const catalogLinkAfterClick = headerNavAfterClick.locator(TestSelectors.headerNavCatalogLink);
     
     await catalogLinkAfterClick.click();
     await expect(page).toHaveURL(/\/catalogo/);
@@ -111,11 +105,9 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     await page.waitForLoadState('networkidle');
     
     // Re-scope links after navigation
-    const headerForHover = page.locator(TestSelectors.header).or(page.locator('header'));
-    const headerNavForHover = headerForHover.locator('nav').or(headerForHover.locator('[data-testid*="nav"]'));
-    const homeLinkForHover = headerNavForHover.locator(TestSelectors.headerNavHomeLink).or(
-      headerNavForHover.getByRole('button', { name: /inicio|home/i }).first()
-    );
+    const headerForHover = page.locator(TestSelectors.header);
+    const headerNavForHover = headerForHover.locator(TestSelectors.headerNav);
+    const homeLinkForHover = headerNavForHover.locator(TestSelectors.headerNavHomeLink);
 
     const homeLinkColorBefore = await homeLinkForHover.evaluate((el) => {
       const styles = (globalThis as any).getComputedStyle(el);
@@ -142,13 +134,11 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     // SECTION 4: Verify Catalog Dropdown Menu
     // ============================================================================
     // Re-scope catalog link to header navigation (desktop nav only, exclude mobile menu)
-    const headerForDropdown = page.locator(TestSelectors.header).or(page.locator('header'));
+    const headerForDropdown = page.locator(TestSelectors.header);
     // Get the first nav element (desktop nav, mobile menu is usually second or has different structure)
     const headerNavForDropdown = headerForDropdown.locator('nav').first();
     
-    const catalogLinkForDropdown = headerNavForDropdown.locator(TestSelectors.headerNavCatalogLink).or(
-      headerNavForDropdown.getByRole('link', { name: /catálogo|catalog/i }).first()
-    );
+    const catalogLinkForDropdown = headerNavForDropdown.locator(TestSelectors.headerNavCatalogLink);
     
     // Hover over catalog link
     await catalogLinkForDropdown.hover();
@@ -229,9 +219,8 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     await navigateToHome(page);
     await page.waitForLoadState('networkidle');
 
-    const headerCtaButton = page.getByRole('button', { name: /ver catálogo/i }).or(
-      page.locator('button').filter({ hasText: /ver catálogo/i })
-    );
+    // Note: Header CTA button may not have data-testid yet - using role selector only
+    const headerCtaButton = page.getByRole('button', { name: /ver catálogo/i });
 
     if (await headerCtaButton.count() > 0) {
       await expect(headerCtaButton).toBeVisible();
@@ -246,7 +235,7 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     await navigateToHome(page);
     await page.waitForLoadState('networkidle');
     
-    const headerForSticky = page.locator(TestSelectors.header).or(page.locator('header'));
+    const headerForSticky = page.locator(TestSelectors.header);
     const initialHeaderPosition = await headerForSticky.boundingBox();
 
     await page.evaluate(() => (globalThis as any).window?.scrollTo(0, 1000));
@@ -269,7 +258,7 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     }
 
     // Re-scope logo to current page header
-    const headerFinal = page.locator(TestSelectors.header).or(page.locator('header'));
+    const headerFinal = page.locator(TestSelectors.header);
     const logoFinal = headerFinal.locator(TestSelectors.headerLogo);
     await expect(logoFinal).toBeVisible();
     await logoFinal.click();

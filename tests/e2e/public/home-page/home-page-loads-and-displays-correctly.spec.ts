@@ -20,11 +20,11 @@ import { waitForElementInViewport, verifyImagesLoad, waitForFirstVisitAnimation 
  * - Estimated execution time: 45-60 seconds
  * - Comprehensive section validation with Supabase API verification
  * 
- * Tags: @e2e, @public, @homepage, @desktop, @development, @staging, @production
+ * Tags: @regression, @e2e, @public, @homepage, @desktop, @development, @staging, @production
  */
 test.describe('HomePage - Loads and Displays Correctly', () => {
   test('should load all sections correctly with animations and Supabase data', {
-    tag: ['@e2e', '@public', '@homepage', '@desktop', '@development', '@staging', '@production'],
+    tag: ['@regression', '@e2e', '@public', '@homepage', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
     // ============================================================================
     // SETUP: Navigate to home page and track performance
@@ -52,9 +52,7 @@ test.describe('HomePage - Loads and Displays Correctly', () => {
     // ============================================================================
     // SECTION 2: Hero Section Basic Verification
     // ============================================================================
-    const heroSection = page.locator(TestSelectors.homeHeroSection).or(
-      page.locator('section').filter({ hasText: /artesanías|macramé/i }).first()
-    );
+    const heroSection = page.locator(TestSelectors.homeHeroSection);
     await expect(heroSection).toBeVisible();
 
     const viewportHeight = page.viewportSize()?.height || 1080;
@@ -86,15 +84,11 @@ test.describe('HomePage - Loads and Displays Correctly', () => {
     });
     expect(bgImage).toContain('url(');
 
-    const heroContent = page.locator(TestSelectors.homeHeroContent).or(
-      heroSection.locator('div').filter({ hasText: /artesanías|macramé|paysandú|monederos/i }).first()
-    );
+    const heroContent = page.locator(TestSelectors.homeHeroContent);
 
-    const title = heroContent.locator(TestSelectors.homeHeroTitle).or(heroContent.locator('h1').first());
-    const subtitle = heroContent.locator(TestSelectors.homeHeroSubtitle).or(
-      heroContent.locator('span').filter({ hasText: /hechas|tradición|tejidos|paysandú|detalles/i }).first()
-    );
-    const description = heroContent.locator(TestSelectors.homeHeroDescription).or(heroContent.locator('p').first());
+    const title = heroContent.locator(TestSelectors.homeHeroTitle);
+    const subtitle = heroContent.locator(TestSelectors.homeHeroSubtitle);
+    const description = heroContent.locator(TestSelectors.homeHeroDescription);
     const heroCtaButton = page.locator(TestSelectors.homeHeroCtaButton);
 
     await expect(title).toBeVisible();
@@ -105,16 +99,12 @@ test.describe('HomePage - Loads and Displays Correctly', () => {
     // ============================================================================
     // SECTION 3: Location Section with Intersection Observer
     // ============================================================================
-    const locationSection = page.locator(TestSelectors.homeLocationSection).or(
-      page.locator('section').filter({ hasText: /ubicación/i })
-    );
+    const locationSection = page.locator(TestSelectors.homeLocationSection);
     await waitForElementInViewport(page, TestSelectors.homeLocationSection);
 
     await expect(locationSection).toBeVisible();
 
-    const locationHeading = page.locator(TestSelectors.homeLocationHeading).or(
-      page.getByRole('heading', { name: /ubicación/i })
-    );
+    const locationHeading = page.locator(TestSelectors.homeLocationHeading);
     await expect(locationHeading).toBeVisible();
 
     await expect(page.locator(TestSelectors.homeLocationInfoCardTiendaFisica)).toBeVisible();
@@ -141,17 +131,13 @@ test.describe('HomePage - Loads and Displays Correctly', () => {
       queryParams: { featured: 'eq.true' }
     }, 5000);
 
-    const featuredSection = page.locator(TestSelectors.homeFeaturedProducts).or(
-      page.locator('section').filter({ hasText: /productos destacados/i })
-    );
+    const featuredSection = page.locator(TestSelectors.homeFeaturedProducts);
     await waitForElementInViewport(page, TestSelectors.homeFeaturedProducts);
 
     if (await featuredSection.count() > 0) {
       await expect(featuredSection).toBeVisible();
 
-      const heading = page.locator(TestSelectors.homeFeaturedProductsHeading).or(
-        page.getByRole('heading', { name: /productos destacados/i })
-      );
+      const heading = page.locator(TestSelectors.homeFeaturedProductsHeading);
       await expect(heading).toBeVisible();
 
       // Wait for API response
@@ -192,29 +178,21 @@ test.describe('HomePage - Loads and Displays Correctly', () => {
     // ============================================================================
     // SECTION 5: About GMP Section with Intersection Observer
     // ============================================================================
-    const aboutSection = page.locator(TestSelectors.homeAboutGmpSection).or(
-      page.locator('#sobre-gmp')
-    );
+    const aboutSection = page.locator(TestSelectors.homeAboutGmpSection);
     await waitForElementInViewport(page, TestSelectors.homeAboutGmpSection);
 
     await expect(aboutSection).toBeVisible();
 
-    const aboutHeading = page.locator(TestSelectors.homeAboutGmpHeading).or(
-      page.getByRole('heading', { name: /sobre gmp/i })
-    );
+    const aboutHeading = page.locator(TestSelectors.homeAboutGmpHeading);
     await expect(aboutHeading).toBeVisible();
 
     const aboutDescription = aboutSection.locator(TestSelectors.homeAboutGmpDescription);
     await expect(aboutDescription).toBeVisible();
 
-    const artisanName = page.locator(TestSelectors.homeAboutGmpArtisanName).or(
-      page.getByRole('heading', { name: /gabriela ponzoni/i })
-    );
+    const artisanName = page.locator(TestSelectors.homeAboutGmpArtisanName);
     await expect(artisanName).toBeVisible();
 
-    const artisanImage = page.locator(TestSelectors.homeAboutGmpArtisanImage).or(
-      aboutSection.locator('img').first()
-    );
+    const artisanImage = page.locator(TestSelectors.homeAboutGmpArtisanImage);
     if (await artisanImage.count() > 0) {
       await expect(artisanImage).toBeVisible();
       const imageSrc = await artisanImage.getAttribute('src');
@@ -224,16 +202,12 @@ test.describe('HomePage - Loads and Displays Correctly', () => {
     // ============================================================================
     // SECTION 6: CTA Section Verification
     // ============================================================================
-    const ctaSection = page.locator(TestSelectors.homeCtaSection).or(
-      page.locator('section').filter({ hasText: /listo para descubrir/i })
-    );
+    const ctaSection = page.locator(TestSelectors.homeCtaSection);
     await waitForElementInViewport(page, TestSelectors.homeCtaSection);
 
     await expect(ctaSection).toBeVisible();
 
-    const ctaSectionButton = page.locator(TestSelectors.homeCtaCatalogLink).or(
-      page.getByRole('button', { name: /ver catálogo completo/i })
-    );
+    const ctaSectionButton = page.locator(TestSelectors.homeCtaCatalogLink);
     await expect(ctaSectionButton).toBeVisible();
 
     // ============================================================================

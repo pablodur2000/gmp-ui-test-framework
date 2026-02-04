@@ -17,11 +17,11 @@ import { waitForFirstVisitAnimation, waitForHoverEffect, waitForElementInViewpor
  * - Estimated execution time: 30-45 seconds
  * - Comprehensive CTA button testing with interactions and hover effects
  * 
- * Tags: @e2e, @public, @homepage, @navigation, @desktop, @development, @staging, @production
+ * Tags: @regression, @e2e, @public, @homepage, @navigation, @desktop, @development, @staging, @production
  */
 test.describe('HomePage - Navigation to Catalog', () => {
   test('should navigate to catalog from all CTA buttons correctly', {
-    tag: ['@e2e', '@public', '@homepage', '@navigation', '@desktop', '@development', '@staging', '@production'],
+    tag: ['@regression', '@e2e', '@public', '@homepage', '@navigation', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
     // ============================================================================
     // SETUP: Navigate to home page
@@ -33,9 +33,7 @@ test.describe('HomePage - Navigation to Catalog', () => {
     // ============================================================================
     // SECTION 1: Test Hero Section CTA
     // ============================================================================
-    const heroCtaButton = page.locator(TestSelectors.homeHeroCtaButton).or(
-      page.getByRole('button', { name: /explorar catálogo/i })
-    );
+    const heroCtaButton = page.locator(TestSelectors.homeHeroCtaButton);
     await expect(heroCtaButton).toBeVisible();
 
     const heroButtonBgBefore = await heroCtaButton.evaluate((el) => {
@@ -89,16 +87,12 @@ test.describe('HomePage - Navigation to Catalog', () => {
     await navigateToHome(page);
     await page.waitForLoadState('networkidle');
 
-    const ctaSection = page.locator(TestSelectors.homeCtaSection).or(
-      page.locator('section').filter({ hasText: /listo para descubrir/i })
-    );
+    const ctaSection = page.locator(TestSelectors.homeCtaSection);
     await waitForElementInViewport(page, TestSelectors.homeCtaSection);
 
     await expect(ctaSection).toBeVisible();
 
-    const ctaButton = page.locator(TestSelectors.homeCtaCatalogLink).or(
-      page.getByRole('button', { name: /ver catálogo completo/i })
-    );
+    const ctaButton = page.locator(TestSelectors.homeCtaCatalogLink);
     await expect(ctaButton).toBeVisible();
 
     const ctaButtonBgBefore = await ctaButton.evaluate((el) => {
@@ -135,9 +129,8 @@ test.describe('HomePage - Navigation to Catalog', () => {
     await navigateToHome(page);
     await page.waitForLoadState('networkidle');
 
-    const headerCtaButton = page.getByRole('button', { name: /ver catálogo/i }).or(
-      page.locator('button').filter({ hasText: /ver catálogo/i })
-    );
+    // Note: Header CTA button may not have data-testid yet - using role selector only
+    const headerCtaButton = page.getByRole('button', { name: /ver catálogo/i });
 
     if (await headerCtaButton.count() > 0) {
       await expect(headerCtaButton).toBeVisible();
@@ -181,9 +174,7 @@ test.describe('HomePage - Navigation to Catalog', () => {
     await navigateToHome(page);
     await page.waitForLoadState('networkidle');
 
-    const heroCtaButtonForHistory = page.locator(TestSelectors.homeHeroCtaButton).or(
-      page.getByRole('button', { name: /explorar catálogo/i })
-    );
+    const heroCtaButtonForHistory = page.locator(TestSelectors.homeHeroCtaButton);
     await expect(heroCtaButtonForHistory).toBeVisible();
     await heroCtaButtonForHistory.click();
     await page.waitForURL(/\/catalogo/, { timeout: 5000 });

@@ -7,7 +7,8 @@ import {
   waitForFirstVisitAnimation,
   setupSupabaseListener,
   verifyImagesLoad,
-  waitForElementInViewport
+  waitForElementInViewport,
+  waitForScrollToComplete
 } from '../../../utils';
 
 /**
@@ -24,11 +25,11 @@ import {
  * - Estimated execution time: 15-20 seconds
  * - Verifies page load, layout, products display, API integration, and empty states
  * 
- * Tags: @e2e, @public, @catalog, @desktop, @development, @staging, @production
+ * Tags: @regression, @e2e, @public, @catalog, @desktop, @development, @staging, @production
  */
 test.describe('CatalogPage - Loads and Displays All Products', () => {
   test('should load all products correctly with proper layout and API verification', {
-    tag: ['@e2e', '@public', '@catalog', '@desktop', '@development', '@staging', '@production'],
+    tag: ['@regression', '@e2e', '@public', '@catalog', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
     // ============================================================================
     // SETUP: Navigate to catalog page and track performance
@@ -55,24 +56,18 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
     await expect(page).toHaveTitle(/catálogo|catalog|productos/i);
 
     // Verify catalog page container
-    // Use primary selector only - fallback would match header link (strict mode violation)
-    const catalogPage = page.locator(TestSelectors.catalogPage).or(
-      page.locator('main, [role="main"]').first()
-    );
+    // Use primary selector only - data-testid="catalog-page" exists in production code
+    const catalogPage = page.locator(TestSelectors.catalogPage);
     await expect(catalogPage).toBeVisible();
 
     // Verify catalog heading
-    const catalogHeading = catalogPage.locator(TestSelectors.catalogHeading).or(
-      page.getByRole('heading', { name: /catálogo de productos/i })
-    );
+    const catalogHeading = catalogPage.locator(TestSelectors.catalogHeading);
     await expect(catalogHeading).toBeVisible();
 
     // ============================================================================
     // SECTION 2: Verify Sidebar and Filters
     // ============================================================================
-    const catalogFilters = catalogPage.locator(TestSelectors.catalogFilters).or(
-      catalogPage.locator('aside, .sidebar').first()
-    );
+    const catalogFilters = catalogPage.locator(TestSelectors.catalogFilters);
 
     if (await catalogFilters.count() > 0) {
       await expect(catalogFilters).toBeVisible();
@@ -84,16 +79,10 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
     // ============================================================================
     // SECTION 3: Verify Main Category Filter
     // ============================================================================
-    // Look for main category filter buttons (Todas, Cuero, Macramé)
-    const todasButton = page.getByRole('button', { name: /todas/i }).or(
-      page.locator('button').filter({ hasText: /todas/i }).first()
-    );
-    const cueroButton = page.getByRole('button', { name: /cuero/i }).or(
-      page.locator('button').filter({ hasText: /cuero/i }).first()
-    );
-    const macrameButton = page.getByRole('button', { name: /macramé|macrame/i }).or(
-      page.locator('button').filter({ hasText: /macramé|macrame/i }).first()
-    );
+    // Use specific data-testid selectors only - no fallbacks to avoid strict mode violations
+    const todasButton = catalogPage.locator(TestSelectors.catalogMainCategoryAll);
+    const cueroButton = catalogPage.locator(TestSelectors.catalogMainCategoryCuero);
+    const macrameButton = catalogPage.locator(TestSelectors.catalogMainCategoryMacrame);
 
     if (await todasButton.count() > 0) {
       await expect(todasButton).toBeVisible();
@@ -105,9 +94,7 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
     // ============================================================================
     // SECTION 4: Verify Search and View Controls
     // ============================================================================
-    const searchInput = catalogPage.locator(TestSelectors.catalogSearchInput).or(
-      page.getByPlaceholder(/buscar productos/i)
-    );
+    const searchInput = catalogPage.locator(TestSelectors.catalogSearchInput);
 
     if (await searchInput.count() > 0) {
       await expect(searchInput).toBeVisible();
@@ -120,13 +107,9 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
       console.log('ℹ️ Search input may not be implemented yet');
     }
 
-    // View toggle buttons (Grid/List)
-    const gridButton = page.getByRole('button', { name: /grid|cuadrícula/i }).or(
-      page.locator('button[aria-label*="grid"], button[aria-label*="grid"]').first()
-    );
-    const listButton = page.getByRole('button', { name: /list|lista/i }).or(
-      page.locator('button[aria-label*="list"], button[aria-label*="lista"]').first()
-    );
+    // View toggle buttons (Grid/List) - use data-testid only
+    const gridButton = catalogPage.locator(TestSelectors.catalogViewToggleGrid);
+    const listButton = catalogPage.locator(TestSelectors.catalogViewToggleList);
 
     if (await gridButton.count() > 0 || await listButton.count() > 0) {
       console.log('✅ View toggle buttons are visible');
@@ -179,16 +162,12 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
       console.log('⚠️ Products loading check timed out, continuing...');
     });
 
-    const productCards = page.locator('[data-testid^="catalog-product-card"]').or(
-      page.locator('.product-card, [class*="product-card"]')
-    );
+    const productCards = page.locator('[data-testid^="catalog-product-card"]');
     const cardCount = await productCards.count();
 
     if (cardCount > 0) {
       // Verify product count text
-      const productCount = catalogPage.locator(TestSelectors.catalogProductCount).or(
-        page.getByText(/mostrando \d+ productos?/i)
-      );
+      const productCount = catalogPage.locator(TestSelectors.catalogProductCount);
 
       if (await productCount.count() > 0) {
         await expect(productCount).toBeVisible();
@@ -200,10 +179,8 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
       await expect(productCards.first()).toBeVisible();
       console.log(`✅ Found ${cardCount} products`);
 
-      // Verify product cards are in grid layout (check for grid classes or structure)
-      const productList = catalogPage.locator(TestSelectors.catalogProductList).or(
-        catalogPage.locator('.product-grid, .product-list, [class*="grid"]').first()
-      );
+      // Verify product cards are in grid layout - use data-testid only
+      const productList = catalogPage.locator(TestSelectors.catalogProductList);
 
       if (await productList.count() > 0) {
         await expect(productList).toBeVisible();
@@ -244,9 +221,7 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
       // ============================================================================
       // SECTION 7: Verify Empty State (If No Products)
       // ============================================================================
-      const emptyState = catalogPage.locator('[data-testid="catalog-empty-state"]').or(
-        page.getByText(/no se encontraron productos/i)
-      );
+      const emptyState = catalogPage.locator('[data-testid="catalog-empty-state"]');
 
       if (await emptyState.count() > 0) {
         await expect(emptyState).toBeVisible();
@@ -290,10 +265,9 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
         console.log(`✅ Product price: ${priceText}`);
       }
 
-      // Verify "Ver Detalles" button or link
-      const detailsButton = firstCard.getByRole('link', { name: /ver detalles|ver más/i }).or(
-        firstCard.getByRole('button', { name: /ver detalles|ver más/i })
-      );
+      // Verify "Ver Detalles" button or link - use data-testid if available
+      // For now, check for link first (most common pattern)
+      const detailsButton = firstCard.getByRole('link', { name: /ver detalles|ver más/i });
       if (await detailsButton.count() > 0) {
         await expect(detailsButton).toBeVisible();
         console.log('✅ "Ver Detalles" button is visible');
@@ -312,7 +286,7 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
     await page.evaluate(() => {
       (globalThis as any).window?.scrollTo(0, 500);
     });
-    await page.waitForTimeout(300); // Small delay for scroll
+    await waitForScrollToComplete(page, 500);
 
     const scrollPosition = await page.evaluate(() => (globalThis as any).window?.scrollY || 0);
     expect(scrollPosition).toBeGreaterThanOrEqual(0);

@@ -92,12 +92,21 @@ export const TestSelectors = {
   catalogHeading: '[data-testid="catalog-heading"]',
   catalogFilters: '[data-testid="catalog-filters"]',
   catalogSearchInput: '[data-testid="catalog-search-input"]',
+  // Main Category Filter Buttons (in main content area)
+  catalogMainCategoryAll: '[data-testid="catalog-main-category-all"]',
+  catalogMainCategoryCuero: '[data-testid="catalog-main-category-cuero"]',
+  catalogMainCategoryMacrame: '[data-testid="catalog-main-category-macrame"]',
+  // Subcategory Filter (in sidebar)
+  catalogSubcategoryFilterAll: '[data-testid="catalog-subcategory-filter-all"]',
+  catalogSubcategoryFilter: (categoryName: string) => `[data-testid="catalog-subcategory-filter-${categoryName}"]`,
   catalogCategoryFilter: (category: string) => `[data-testid="catalog-category-filter-${category}"]`,
   catalogInventoryFilter: (status: string) => `[data-testid="catalog-inventory-filter-${status}"]`,
   catalogProductList: '[data-testid="catalog-product-list"]',
   catalogProductCard: (id: string | number) => `[data-testid="catalog-product-card-${id}"]`,
   catalogProductCount: '[data-testid="catalog-product-count"]',
   catalogViewToggle: '[data-testid="catalog-view-toggle"]',
+  catalogViewToggleGrid: '[data-testid="catalog-view-toggle-grid"]',
+  catalogViewToggleList: '[data-testid="catalog-view-toggle-list"]',
   
   // ============================================
   // Product Detail Page

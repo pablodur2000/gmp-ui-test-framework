@@ -18,11 +18,11 @@ import { trackRedirect } from '../utils/performance-tracker';
  * - Desktop viewport only (1920x1080)
  * - Form functionality and security verification
  * 
- * Tags: @smoke, @authentication, @admin, @desktop, @development, @staging
+ * Tags: @regression, @smoke, @authentication, @admin, @desktop, @development, @staging
  */
 test.describe('Smoke Test - Critical Admin Paths', () => {
   test('should load AdminLoginPage correctly with functional form', {
-    tag: ['@smoke', '@authentication', '@admin', '@desktop', '@development', '@staging'],
+    tag: ['@regression', '@smoke', '@authentication', '@admin', '@desktop', '@development', '@staging'],
   }, async ({ page }) => {
     // ============================================================================
     // SETUP: Navigate to admin login page
@@ -46,9 +46,7 @@ test.describe('Smoke Test - Critical Admin Paths', () => {
     const heading = page.getByRole('heading', { name: /admin access|acceso admin/i });
     await expect(heading).toBeVisible();
 
-    const loginForm = page.locator(TestSelectors.adminLoginPage).or(
-      page.locator('form').filter({ hasText: /email|password/i })
-    );
+    const loginForm = page.locator(TestSelectors.adminLoginPage);
     await expect(loginForm).toBeVisible();
 
     // Monitor console errors
@@ -57,9 +55,7 @@ test.describe('Smoke Test - Critical Admin Paths', () => {
     // ============================================================================
     // SECTION 2: Email Input Field
     // ============================================================================
-    const emailInput = page.locator(TestSelectors.adminLoginEmailInput).or(
-      page.getByLabel(/email|correo/i).or(page.getByPlaceholder(/email/i))
-    );
+    const emailInput = page.locator(TestSelectors.adminLoginEmailInput);
     await expect(emailInput).toBeVisible();
     await expect(emailInput).toBeEnabled();
 
@@ -76,9 +72,7 @@ test.describe('Smoke Test - Critical Admin Paths', () => {
     // ============================================================================
     // SECTION 3: Password Input Field
     // ============================================================================
-    const passwordInput = page.locator(TestSelectors.adminLoginPasswordInput).or(
-      page.getByLabel(/password|contraseña/i).or(page.getByPlaceholder(/password/i))
-    );
+    const passwordInput = page.locator(TestSelectors.adminLoginPasswordInput);
     await expect(passwordInput).toBeVisible();
     await expect(passwordInput).toBeEnabled();
 
@@ -88,9 +82,8 @@ test.describe('Smoke Test - Critical Admin Paths', () => {
     // ============================================================================
     // SECTION 4: Password Visibility Toggle
     // ============================================================================
-    const toggleButton = passwordInput.locator('..').locator('button').or(
-      page.locator('button').filter({ hasText: /eye|ver/i })
-    );
+    // Note: Password toggle button may not have data-testid yet - using parent scoped selector
+    const toggleButton = passwordInput.locator('..').locator('button').first();
 
     if (await toggleButton.count() > 0) {
       await passwordInput.fill('testpassword123');
@@ -140,15 +133,13 @@ test.describe('Smoke Test - Critical Admin Paths', () => {
     // ============================================================================
     // SECTION 5: Submit Button
     // ============================================================================
-    const submitButton = page.locator(TestSelectors.adminLoginSubmitButton).or(
-      page.getByRole('button', { name: /sign in|iniciar sesión|entrar/i })
-    );
+    const submitButton = page.locator(TestSelectors.adminLoginSubmitButton);
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
   });
 
   test('should redirect unauthenticated users from AdminDashboardPage to login', {
-    tag: ['@smoke', '@authentication', '@admin', '@desktop', '@development', '@staging'],
+    tag: ['@regression', '@smoke', '@authentication', '@admin', '@desktop', '@development', '@staging'],
   }, async ({ page }) => {
     // ============================================================================
     // SETUP: Clear authentication and navigate to dashboard
@@ -194,14 +185,10 @@ test.describe('Smoke Test - Critical Admin Paths', () => {
     // ============================================================================
     // SECTION 2: Verify Security (No Content Exposure)
     // ============================================================================
-    const loginPage = page.locator(TestSelectors.adminLoginPage).or(
-      page.getByRole('heading', { name: /admin access|acceso admin/i })
-    );
+    const loginPage = page.locator(TestSelectors.adminLoginPage);
     await expect(loginPage).toBeVisible();
 
-    const dashboardContent = page.locator(TestSelectors.adminDashboardPage).or(
-      page.getByText(/dashboard|panel/i)
-    );
+    const dashboardContent = page.locator(TestSelectors.adminDashboardPage);
     const dashboardVisible = await dashboardContent.count() > 0;
     expect(dashboardVisible).toBe(false);
     console.log('✅ No dashboard content exposed');

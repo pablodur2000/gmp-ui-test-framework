@@ -18,13 +18,13 @@ import { waitForFirstVisitAnimation, waitForHoverEffect, waitForScrollToComplete
  * - Estimated execution time: 60-90 seconds
  * - Comprehensive hero section testing with carousel and animations
  * 
- * Tags: @e2e, @public, @homepage, @hero, @desktop, @development, @staging, @production
+ * Tags: @regression, @e2e, @public, @homepage, @hero, @desktop, @development, @staging, @production
  */
 test.describe('HomePage - Hero Section', () => {
   test.setTimeout(300000); // 5 minutes for carousel cycles
 
   test('should display hero section with carousel, animations, and interactions', {
-    tag: ['@e2e', '@public', '@homepage', '@hero', '@desktop', '@development', '@staging', '@production'],
+    tag: ['@regression', '@e2e', '@public', '@homepage', '@hero', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
     page.setDefaultTimeout(90000);
     page.setDefaultNavigationTimeout(60000);
@@ -53,7 +53,7 @@ test.describe('HomePage - Hero Section', () => {
     });
     expect(bodyOverflowAfter).not.toBe('hidden');
 
-    const header = page.locator(TestSelectors.header).or(page.locator('header'));
+    const header = page.locator(TestSelectors.header);
     await expect(header).toBeVisible();
 
     // ============================================================================
@@ -91,15 +91,11 @@ test.describe('HomePage - Hero Section', () => {
     });
     expect(bgImage).toContain('url(');
 
-    const heroContent = page.locator(TestSelectors.homeHeroContent).or(
-      heroSection.locator('div').filter({ hasText: /artesanías|macramé|paysandú|monederos/i }).first()
-    );
+    const heroContent = page.locator(TestSelectors.homeHeroContent);
 
-    const title = heroContent.locator(TestSelectors.homeHeroTitle).or(heroContent.locator('h1').first());
-    const subtitle = heroContent.locator(TestSelectors.homeHeroSubtitle).or(
-      heroContent.locator('span').filter({ hasText: /hechas|tradición|tejidos|paysandú|detalles/i }).first()
-    );
-    const description = heroContent.locator(TestSelectors.homeHeroDescription).or(heroContent.locator('p').first());
+    const title = heroContent.locator(TestSelectors.homeHeroTitle);
+    const subtitle = heroContent.locator(TestSelectors.homeHeroSubtitle);
+    const description = heroContent.locator(TestSelectors.homeHeroDescription);
     const ctaButton = page.locator(TestSelectors.homeHeroCtaButton);
 
     await expect(title).toBeVisible();

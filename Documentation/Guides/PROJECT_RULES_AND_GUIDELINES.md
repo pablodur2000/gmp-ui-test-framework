@@ -206,18 +206,33 @@ import { TestSelectors } from '../../../utils/selectors';
 const title = page.locator(TestSelectors.homeHeroTitle);
 ```
 
-### Rule 3: Fallback Selectors (Temporary)
+### Rule 3: NO Fallback Selectors - Use Only data-testid
 
-**ALLOWED**: Use fallback selectors ONLY when `data-testid` doesn't exist yet.
+**PROHIBITED**: Using `.or()` fallback selectors when `data-testid` exists.
 
-**Pattern**:
+**CRITICAL RULE**: **IF `data-testid` EXISTS, fallback is NOT necessary!**
+
 ```typescript
+// ❌ PROHIBITED - Never use .or() when data-testid exists
 const element = page.locator(TestSelectors.homeHeroTitle).or(
-  page.locator('h1').first() // Fallback
+  page.locator('h1').first() // Fallback - REMOVE THIS
 );
+
+// ✅ REQUIRED - Use only data-testid selector
+const element = page.locator(TestSelectors.homeHeroTitle);
 ```
 
-**Note**: Document missing `data-testid` attributes and request them to be added.
+**Why this rule exists:**
+- `.or()` causes strict mode violations (matches multiple elements)
+- Hides missing attributes instead of forcing us to add them
+- Makes tests flaky and unpredictable
+- Slower execution (evaluates multiple selectors)
+
+**If test fails:**
+1. Verify `data-testid` exists in web app
+2. If missing, add it to the component
+3. If exists, check selector spelling/typo
+4. Never add `.or()` fallback as a workaround
 
 ### Rule 4: Avoid Text-Based Selectors
 

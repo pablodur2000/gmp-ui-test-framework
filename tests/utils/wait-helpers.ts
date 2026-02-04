@@ -160,9 +160,7 @@ export async function waitForFirstVisitAnimation(
 
   // Wait for hero section to be visible (elements appear after animation)
   try {
-    const heroSection = page.locator('[data-testid="home-hero-section"]').or(
-      page.locator('section').filter({ hasText: /artesanías|macramé/i }).first()
-    );
+    const heroSection = page.locator('[data-testid="home-hero-section"]');
     await expect(heroSection).toBeVisible({ timeout: 2000 });
   } catch (e) {
     // Hero section might not have data-testid, that's okay

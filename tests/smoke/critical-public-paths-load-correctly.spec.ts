@@ -20,11 +20,11 @@ import { waitForScrollToComplete, waitForElementInViewport, waitForFirstVisitAni
  * - Critical path verification with Supabase API checks
  * - Intersection Observer animations
  * 
- * Tags: @smoke, @heartbeat, @desktop, @development, @staging, @production
+ * Tags: @regression, @smoke, @heartbeat, @desktop, @development, @staging, @production
  */
 test.describe('Smoke Test - Critical Public Paths', () => {
   test('should load HomePage correctly with all sections and Supabase data', {
-    tag: ['@smoke', '@heartbeat', '@desktop', '@development', '@staging', '@production'],
+    tag: ['@regression', '@smoke', '@heartbeat', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
     // ============================================================================
     // SETUP: Navigate to home page and track performance
@@ -50,7 +50,7 @@ test.describe('Smoke Test - Critical Public Paths', () => {
     // ============================================================================
     // SECTION 2: Header and Sticky Behavior
     // ============================================================================
-    const header = page.locator(TestSelectors.header).or(page.locator('header'));
+    const header = page.locator(TestSelectors.header);
     await expect(header).toBeVisible();
 
     await page.evaluate(() => (globalThis as any).window?.scrollTo(0, 500));
@@ -68,9 +68,7 @@ test.describe('Smoke Test - Critical Public Paths', () => {
     await page.evaluate(() => (globalThis as any).window?.scrollTo(0, 0));
     await waitForScrollToComplete(page, 0);
 
-    const heroSection = page.locator(TestSelectors.homeHeroSection).or(
-      page.locator('section').filter({ hasText: /artesanías|macramé/i }).first()
-    );
+    const heroSection = page.locator(TestSelectors.homeHeroSection);
     await expect(heroSection).toBeVisible();
 
     const viewportHeight = page.viewportSize()?.height || 1080;
@@ -88,17 +86,13 @@ test.describe('Smoke Test - Critical Public Paths', () => {
       expect(bgImage).toContain('url(');
     }
 
-    const heroCtaButton = page.locator(TestSelectors.homeHeroCtaButton).or(
-      page.getByRole('button', { name: /explorar catálogo/i })
-    );
+    const heroCtaButton = page.locator(TestSelectors.homeHeroCtaButton);
     await expect(heroCtaButton).toBeVisible();
 
     // ============================================================================
     // SECTION 4: Location Section with Intersection Observer
     // ============================================================================
-    const locationSection = page.locator(TestSelectors.homeLocationSection).or(
-      page.locator('section').filter({ hasText: /ubicación/i })
-    );
+    const locationSection = page.locator(TestSelectors.homeLocationSection);
     await waitForElementInViewport(page, TestSelectors.homeLocationSection);
 
     await expect(locationSection).toBeVisible();
@@ -124,9 +118,7 @@ test.describe('Smoke Test - Critical Public Paths', () => {
       queryParams: { featured: 'eq.true' }
     });
 
-    const featuredSection = page.locator(TestSelectors.homeFeaturedProducts).or(
-      page.locator('section').filter({ hasText: /productos destacados/i })
-    );
+    const featuredSection = page.locator(TestSelectors.homeFeaturedProducts);
     await waitForElementInViewport(page, TestSelectors.homeFeaturedProducts);
 
     if (await featuredSection.count() > 0) {
@@ -156,36 +148,28 @@ test.describe('Smoke Test - Critical Public Paths', () => {
     // ============================================================================
     // SECTION 6: About GMP Section
     // ============================================================================
-    const aboutSection = page.locator(TestSelectors.homeAboutGmpSection).or(
-      page.locator('#sobre-gmp')
-    );
+    const aboutSection = page.locator(TestSelectors.homeAboutGmpSection);
     await waitForElementInViewport(page, TestSelectors.homeAboutGmpSection);
 
     await expect(aboutSection).toBeVisible();
 
-    const aboutHeading = page.locator(TestSelectors.homeAboutGmpHeading).or(
-      page.getByRole('heading', { name: /sobre gmp/i })
-    );
+    const aboutHeading = page.locator(TestSelectors.homeAboutGmpHeading);
     await expect(aboutHeading).toBeVisible();
 
     // ============================================================================
     // SECTION 7: CTA Section
     // ============================================================================
-    const ctaSection = page.locator(TestSelectors.homeCtaSection).or(
-      page.locator('section').filter({ hasText: /listo para descubrir/i })
-    );
+    const ctaSection = page.locator(TestSelectors.homeCtaSection);
     await waitForElementInViewport(page, TestSelectors.homeCtaSection);
 
     await expect(ctaSection).toBeVisible();
 
-    const ctaButton = page.locator(TestSelectors.homeCtaCatalogLink).or(
-      page.getByRole('button', { name: /ver catálogo completo/i })
-    );
+    const ctaButton = page.locator(TestSelectors.homeCtaCatalogLink);
     await expect(ctaButton).toBeVisible();
   });
 
   test('should load CatalogPage correctly with products and filters', {
-    tag: ['@smoke', '@heartbeat', '@desktop', '@development', '@staging', '@production'],
+    tag: ['@regression', '@smoke', '@heartbeat', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
     // ============================================================================
     // SETUP: Navigate to catalog page
@@ -198,12 +182,10 @@ test.describe('Smoke Test - Critical Public Paths', () => {
     // ============================================================================
     await expect(page).toHaveTitle(/catálogo|productos/i);
 
-    const header = page.locator(TestSelectors.header).or(page.locator('header'));
+    const header = page.locator(TestSelectors.header);
     await expect(header).toBeVisible();
 
-    const catalogHeading = page.locator(TestSelectors.catalogHeading).or(
-      page.getByRole('heading', { name: /catálogo de productos/i })
-    );
+    const catalogHeading = page.locator(TestSelectors.catalogHeading);
     await expect(catalogHeading).toBeVisible();
 
     // Monitor console errors (non-critical for catalog page)
@@ -212,17 +194,13 @@ test.describe('Smoke Test - Critical Public Paths', () => {
     // ============================================================================
     // SECTION 2: Filters and Search
     // ============================================================================
-    const filters = page.locator(TestSelectors.catalogFilters).or(
-      page.locator('aside').filter({ hasText: /filtros|todas|cuero|macramé/i })
-    );
+    const filters = page.locator(TestSelectors.catalogFilters);
 
     if (await filters.count() > 0) {
       await expect(filters).toBeVisible();
     }
 
-    const searchInput = page.locator(TestSelectors.catalogSearchInput).or(
-      page.getByPlaceholder(/buscar/i)
-    );
+    const searchInput = page.locator(TestSelectors.catalogSearchInput);
 
     if (await searchInput.count() > 0) {
       await expect(searchInput).toBeVisible();
@@ -247,9 +225,7 @@ test.describe('Smoke Test - Critical Public Paths', () => {
       }
     }
 
-    const productCards = page.locator('[data-testid^="catalog-product-card"]').or(
-      page.locator('.product-card, [class*="product-card"]')
-    );
+    const productCards = page.locator('[data-testid^="catalog-product-card"]');
     const cardCount = await productCards.count();
 
     if (cardCount > 0) {
@@ -275,7 +251,7 @@ test.describe('Smoke Test - Critical Public Paths', () => {
   });
 
   test('should load ProductDetailPage correctly with product data from Supabase', {
-    tag: ['@smoke', '@heartbeat', '@desktop', '@development', '@staging', '@production'],
+    tag: ['@regression', '@smoke', '@heartbeat', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
     // ============================================================================
     // SETUP: Get a product ID from catalog first
@@ -300,9 +276,7 @@ test.describe('Smoke Test - Critical Public Paths', () => {
       console.log('⚠️ Products loading check timed out, continuing...');
     });
 
-    const productCards = page.locator('[data-testid^="catalog-product-card"]').or(
-      page.locator('.product-card, [class*="product-card"]')
-    );
+    const productCards = page.locator('[data-testid^="catalog-product-card"]');
     const cardCount = await productCards.count();
 
     if (cardCount === 0) {
@@ -345,9 +319,13 @@ test.describe('Smoke Test - Critical Public Paths', () => {
     await page.waitForLoadState('networkidle');
 
     // ============================================================================
-    // SECTION 1: Page Load and Title
+    // SECTION 1: Page Load and URL Verification
     // ============================================================================
-    await expect(page).toHaveTitle(new RegExp(productId, 'i'));
+    // Verify URL contains product ID (more reliable than title check)
+    await expect(page).toHaveURL(new RegExp(`/producto/${productId}`, 'i'));
+    
+    // Verify page title (default site title, not product-specific)
+    await expect(page).toHaveTitle(/Artesanías en Cuero|GMP/i);
 
     // Monitor console errors (non-critical)
     await monitorAndCheckConsoleErrors(page, 1000, false);
@@ -363,9 +341,7 @@ test.describe('Smoke Test - Critical Public Paths', () => {
         const product = response.data[0];
         console.log(`✅ Supabase API verified: Product "${product.name || product.title}"`);
 
-        const productTitle = page.locator(TestSelectors.productDetailTitle).or(
-          page.getByRole('heading', { level: 1 }).first()
-        );
+        const productTitle = page.locator(TestSelectors.productDetailTitle);
         await expect(productTitle).toBeVisible();
 
         if (product.name || product.title) {
@@ -378,9 +354,7 @@ test.describe('Smoke Test - Critical Public Paths', () => {
     // ============================================================================
     // SECTION 3: Product Images
     // ============================================================================
-    const productImage = page.locator(TestSelectors.productDetailImage(0)).or(
-      page.locator('img').first()
-    );
+    const productImage = page.locator(TestSelectors.productDetailImage(0));
 
     if (await productImage.count() > 0) {
       await expect(productImage).toBeVisible();
@@ -391,9 +365,8 @@ test.describe('Smoke Test - Critical Public Paths', () => {
     // ============================================================================
     // SECTION 4: Navigation Elements
     // ============================================================================
-    const backButton = page.getByRole('button', { name: /volver al catálogo/i }).or(
-      page.getByRole('link', { name: /volver|catálogo/i })
-    );
+    // Note: Back button may not have data-testid yet - using role selector only
+    const backButton = page.getByRole('button', { name: /volver al catálogo/i });
 
     if (await backButton.count() > 0) {
       await expect(backButton).toBeVisible();
