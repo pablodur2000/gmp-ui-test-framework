@@ -23,6 +23,9 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
   test('should have working navigation elements with dropdowns and hover states', {
     tag: ['@regression', '@smoke', '@navigation', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
+    // Ensure desktop viewport so header nav (md:flex) is visible in CI
+    await page.setViewportSize({ width: 1920, height: 1080 });
+
     // ============================================================================
     // SETUP: Navigate to home page and wait for animations
     // ============================================================================
@@ -89,11 +92,12 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     // Wait for navigation to complete and page to be stable
     await page.waitForLoadState('networkidle');
 
-    // Re-scope links after navigation
+    // Re-scope links after navigation; wait for catalog link (desktop nav can re-render)
     const headerAfterClick = page.locator(TestSelectors.header);
     const headerNavAfterClick = headerAfterClick.locator(TestSelectors.headerNav);
     const catalogLinkAfterClick = headerNavAfterClick.locator(TestSelectors.headerNavCatalogLink);
-    
+    await expect(catalogLinkAfterClick).toBeVisible({ timeout: 15000 });
+
     await catalogLinkAfterClick.click();
     await expect(page).toHaveURL(/\/catalogo/);
     await page.waitForLoadState('networkidle');

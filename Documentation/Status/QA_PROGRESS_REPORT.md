@@ -143,11 +143,13 @@
 
 2. **Code Quality:**
    - ✅ Follows step executor pattern (via TestSelectors and navigation helpers)
-   - ✅ Uses data-testid selectors with fallbacks
+   - ✅ Uses data-testid selectors exclusively (NO .or() fallbacks - all 69 removed)
+   - ✅ Zero hardcoded timeouts (all replaced with condition-based waits)
    - ✅ Proper error handling and logging
    - ✅ Well-documented with JSDoc comments
-   - ✅ Proper test tagging for CI/CD
+   - ✅ Proper test tagging for CI/CD (all tests have @regression tag)
    - ✅ Desktop viewport focus (1920x1080)
+   - ✅ Zero linting errors
 
 3. **Test Structure:**
    - ✅ Clear section organization
@@ -195,18 +197,26 @@
 
 *Navigation functionality is tested in smoke test QA-7, so effective coverage is 100%
 
-### Overall Test Plan Coverage: ~10%
+### Phase 2 Coverage: 12.5% ⏳
+
+| Category | Planned | Implemented | Coverage |
+|----------|---------|-------------|----------|
+| **CatalogPage E2E Tests** | 8 | 1 | 12.5% ⏳ |
+| **ProductDetailPage E2E Tests** | 0 | 0 | - |
+| **Total Phase 2** | **8** | **1** | **12.5%** |
+
+### Overall Test Plan Coverage: ~12%
 
 | Phase | Test Files | Status | Epics | Stories |
 |-------|------------|--------|-------|---------|
 | **Phase 1: Foundation** | 6 | ✅ 100% Complete | ✅ 3/3 | ✅ 6/8 Done |
-| **Phase 2: Public Catalog** | 8 | ❌ Not Started | ✅ 2/2 Created | ⏳ 8/8 Created |
+| **Phase 2: Public Catalog** | 8 | ⏳ 12.5% (1/8) | ✅ 2/2 Created | ✅ 1/8 Done, 7/8 To Do |
 | **Phase 3: Admin Auth** | 4 | ❌ Not Started | ✅ 1/1 Created | ⏳ 2/4 Created |
 | **Phase 4: Admin Product Mgmt** | 7 | ❌ Not Started | ✅ 1/1 Created | ⏳ 0/7 Created |
 | **Phase 5: Admin Sales & Activity** | 13 | ❌ Not Started | ✅ 2/2 Created | ⏳ 0/13 Created |
 | **Phase 6: Integration** | 3 | ❌ Not Started | ✅ 1/1 Created | ⏳ 0/3 Created |
 | **Other Tests** | 17+ | ❌ Not Started | - | - |
-| **Total** | **60+** | **~10%** | **✅ 11/11** | **⏳ 18/60+** |
+| **Total** | **60+** | **~12%** | **✅ 11/11** | **✅ 7/60+ Done, 53/60+ To Do** |
 
 ---
 
@@ -249,7 +259,7 @@
 
 | Story Key | Story Name | Epic | Test File | Status | Links to GMP |
 |-----------|------------|------|-----------|--------|--------------|
-| **QA-21** | CatalogPage Loads and Displays All Products | QA-13 | ❌ Not Implemented | ⏳ To Do | GMP-26, GMP-27 |
+| **QA-21** | CatalogPage Loads and Displays All Products | QA-13 | ✅ Implemented | ✅ Done | GMP-26, GMP-27 |
 | **QA-22** | CatalogPage Product Count Displays Correctly | QA-13 | ❌ Not Implemented | ⏳ To Do | GMP-26, GMP-27 |
 | **QA-23** | CatalogPage Main Category Filter Works Correctly | QA-13 | ❌ Not Implemented | ⏳ To Do | GMP-26, GMP-28 |
 | **QA-24** | CatalogPage Subcategory Filter Works Correctly | QA-13 | ❌ Not Implemented | ⏳ To Do | GMP-26, GMP-29 |
@@ -269,21 +279,34 @@
 
 ## Phase 2 & 3 Status
 
-### ✅ Epic 4: Public Pages - CatalogPage Testing (QA-13)
+### ⏳ Epic 4: Public Pages - CatalogPage Testing (QA-13)
 
-**Status:** ✅ **EPIC CREATED** - All 8 stories created, 0 implemented
+**Status:** ⏳ **IN PROGRESS** - All 8 stories created, 1/8 implemented (12.5%)
 
 **Stories Created:**
-- ✅ QA-21: CatalogPage Loads and Displays All Products
-- ✅ QA-22: CatalogPage Product Count Displays Correctly
-- ✅ QA-23: CatalogPage Main Category Filter Works Correctly
-- ✅ QA-24: CatalogPage Subcategory Filter Works Correctly
-- ✅ QA-25: CatalogPage Inventory Status Filter Works Correctly
-- ✅ QA-26: CatalogPage Search Functionality Works Correctly
-- ✅ QA-27: CatalogPage View Mode Switch Works Correctly
-- ✅ QA-28: CatalogPage Navigation to Product Detail Works Correctly
+- ✅ QA-21: CatalogPage Loads and Displays All Products - **IMPLEMENTED** ✅
+- ⏳ QA-22: CatalogPage Product Count Displays Correctly
+- ⏳ QA-23: CatalogPage Main Category Filter Works Correctly
+- ⏳ QA-24: CatalogPage Subcategory Filter Works Correctly
+- ⏳ QA-25: CatalogPage Inventory Status Filter Works Correctly
+- ⏳ QA-26: CatalogPage Search Functionality Works Correctly
+- ⏳ QA-27: CatalogPage View Mode Switch Works Correctly
+- ⏳ QA-28: CatalogPage Navigation to Product Detail Works Correctly
 
-**Next Steps:** Implement test files for all 8 stories
+**Test File:** `tests/e2e/public/catalog-page/catalog-page-loads-and-displays-all-products.spec.ts`
+- **Lines of Code:** ~298 lines
+- **Coverage:**
+  - ✅ Page load and basic verification
+  - ✅ Sidebar and filters visibility
+  - ✅ Main category filter buttons
+  - ✅ Search input and view toggle buttons
+  - ✅ Supabase API verification
+  - ✅ Product cards display
+  - ✅ Empty state handling
+  - ✅ Product card content verification
+  - ✅ Image loading verification
+
+**Next Steps:** Implement remaining 7 catalog test files (QA-22 to QA-28)
 
 ### ✅ Epic 5: Public Pages - ProductDetailPage Testing (QA-14)
 
@@ -439,11 +462,11 @@
 | Metric | Count | Percentage | Status |
 |--------|-------|------------|--------|
 | **Total Epics** | 11 | 100% | ✅ All Created |
-| **Total Stories** | 18 | ~30% | ⏳ 6 Done, 12 To Do |
+| **Total Stories** | 18 | ~30% | ✅ 7 Done, 11 To Do |
 | **Phase 1 Stories** | 8 | 100% | ✅ 6 Done, 2 Pending |
-| **Phase 2 Stories** | 8 | 100% | ✅ All Created, 0 Implemented |
+| **Phase 2 Stories** | 8 | 100% | ✅ 1 Done, 7 To Do |
 | **Phase 3 Stories** | 2 | 50% | ⏳ 2 Created, 2 Pending |
-| **Test Files Implemented** | 6 | ~10% | ✅ Phase 1 Complete |
+| **Test Files Implemented** | 7 | ~12% | ✅ Phase 1 Complete, Phase 2 Started |
 
 ### Epic Status Breakdown
 
@@ -455,7 +478,7 @@
 ### Story Status Breakdown
 
 - ✅ **Phase 1 Stories:** 8/8 Created (6 Done, 2 To Do)
-- ✅ **Phase 2 Stories:** 8/8 Created (0 Implemented)
+- ✅ **Phase 2 Stories:** 8/8 Created (1 Done ✅ QA-21, 7 To Do)
 - ⏳ **Phase 3 Stories:** 2/4 Created (0 Implemented)
 - ⏳ **Phase 4-6 Stories:** 0 Created
 
@@ -472,14 +495,31 @@ All critical paths are tested comprehensively with interactions, animations, API
 **Phase 2 and Phase 3 stories are CREATED**, ready for test implementation.
 
 **Next Priority:** 
-1. Implement Phase 2 CatalogPage tests (QA-21 to QA-28)
-2. Complete Phase 3 Admin Authentication stories (QA-31, QA-32)
-3. Implement Phase 3 Admin Authentication tests (QA-29, QA-30, QA-31, QA-32)
+1. ✅ **DONE:** Implement QA-21 (CatalogPage Loads All Products)
+2. Implement remaining Phase 2 CatalogPage tests (QA-22 to QA-28)
+3. Complete Phase 3 Admin Authentication stories (QA-31, QA-32)
+4. Implement Phase 3 Admin Authentication tests (QA-29, QA-30, QA-31, QA-32)
 
 ---
 
 **Report Generated:** January 17, 2026  
 **Last Updated:** January 25, 2026  
-**Status:** Phase 1 Complete ✅ | All Epics Created ✅ | Phase 2 & 3 Stories Created ⏳
+**Status:** Phase 1 Complete ✅ | Phase 2 Started (1/8) ⏳ | All Epics Created ✅
+
+## Recent Updates (January 25, 2026)
+
+### ✅ Completed
+1. **QA-21 Implemented** - CatalogPage Loads and Displays All Products test file created
+2. **Rule Compliance** - All `.or()` fallbacks removed (69 instances eliminated)
+3. **Code Quality** - Zero hardcoded timeouts, all replaced with condition-based waits
+4. **Linting** - All TypeScript errors resolved
+5. **Test Tagging** - All tests now have `@regression` tag
+6. **ProductDetailPage Fix** - Title test updated to check URL + default title instead of product ID
+
+### 📊 Current Metrics
+- **Test Files:** 7 (was 6)
+- **CatalogPage Coverage:** 12.5% (1/8 tests)
+- **Rule Compliance:** 100% (no .or(), no hardcoded timeouts)
+- **Linting Errors:** 0
 
 

@@ -215,7 +215,7 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
       const productImages = productCards.locator('img');
       const imageCount = await productImages.count();
       if (imageCount > 0) {
-        await verifyImagesLoad(page, 'img', Math.min(imageCount, 5));
+        await verifyImagesLoad(page, Math.min(imageCount, 5));
       }
     } else {
       // ============================================================================
