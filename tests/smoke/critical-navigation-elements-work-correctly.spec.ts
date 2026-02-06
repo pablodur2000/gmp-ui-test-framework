@@ -92,7 +92,11 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     // Wait for navigation to complete and page to be stable
     await page.waitForLoadState('networkidle');
 
-    // Re-scope links after navigation; wait for catalog link (desktop nav can re-render)
+    // Wait for first-visit hero animation to finish so header (and catalog link) is visible (CI lands on home with fresh state)
+    await page.locator('[data-testid="home-hero-first-visit-curtain"]').waitFor({ state: 'hidden', timeout: 12000 }).catch(() => {});
+    await page.locator(TestSelectors.header).waitFor({ state: 'visible', timeout: 5000 });
+
+    // Re-scope links after navigation; wait for catalog link
     const headerAfterClick = page.locator(TestSelectors.header);
     const headerNavAfterClick = headerAfterClick.locator(TestSelectors.headerNav);
     const catalogLinkAfterClick = headerNavAfterClick.locator(TestSelectors.headerNavCatalogLink);
