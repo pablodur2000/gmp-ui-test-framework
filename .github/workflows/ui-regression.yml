@@ -72,4 +72,5 @@ jobs:
           ARTIFACT_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           AI_SUMMARY_ENABLED: '1'
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node scripts/notion-report-run.js --report=playwright-report/results.json
