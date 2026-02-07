@@ -438,12 +438,17 @@ The project uses the default **Playwright HTML** report and a **JSON** reporter 
 
 ### Notion (Test Runs)
 
-UI regression runs are reported to **Notion** via a "Test Runs" database. Each run creates one row (Run date, Run name, Environment, Passed, Failed, Duration, Status, Artifact link). The run page shows:
+UI regression runs are reported to **Notion** via a "Test Runs" database. Each run creates one row (Run date, Run name, Environment, Passed, Failed, Duration, Status, Artifact link). The run page content order is:
 
-- **Passed tests**: one **table** with a "Test" column (quick list).
-- **Failed tests**: **one by one**, each with a heading and the error in a **quote** block (`>`).
+- **Regression summary** (optional): brief AI-generated summary of failures when enabled (see below).
+- **Failed tests** (first): one by one, each with a heading and the error in a **quote** block (`>`), without attachment paths.
+- **Passed**: one **table** with columns Test, Duration, Status.
 
-**CI**: After "Run Playwright tests", the workflow runs `scripts/notion-report-run.js` (with `if: always()` so failed runs are still reported). Required GitHub Secrets: `NOTION_API_KEY`, `NOTION_DATABASE_ID`. The script also needs `ENVIRONMENT` and `ARTIFACT_URL` (set by the workflow).
+**Optional AI summary**: If there are failures, the script can call a free AI API to generate a short regression summary (2–4 sentences). Set `AI_SUMMARY_ENABLED=1` and one of:
+- **Groq** (free, no credit card): add secret `GROQ_API_KEY` (get key at https://console.groq.com/keys).
+- **Google Gemini** (free tier): add secret `GEMINI_API_KEY` (get key at https://aistudio.google.com/apikey).
+
+**CI**: After "Run Playwright tests", the workflow runs `scripts/notion-report-run.js` (with `if: always()` so failed runs are still reported). Required GitHub Secrets: `NOTION_API_KEY`, `NOTION_DATABASE_ID`. Optional: `GROQ_API_KEY` or `GEMINI_API_KEY`, and set `AI_SUMMARY_ENABLED=1` in the workflow env to enable the AI summary. The script also needs `ENVIRONMENT` and `ARTIFACT_URL` (set by the workflow).
 
 **One-time setup**: Create a Notion page (e.g. "GMP UI Test Reports"), add a database "Test Runs" with properties: Run date (Date), Run name (Title), Environment (Select: develop | production), Passed (Number), Failed (Number), Duration (Number), Status (Select: Pass | Fail | Partial), Artifact link (URL). Share the database with your Notion integration and add the integration token and database ID as repo secrets. Add a **Calendar** view on "Run date" to see runs by day.
 
