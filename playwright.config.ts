@@ -4,15 +4,16 @@ import { defineConfig, devices } from '@playwright/test';
  * Environment Configuration
  * 
  * Supports multiple environments:
- * - production: https://pablodur2000.github.io/gmp-web-app/ (default)
+ * - production: https://gmp-web-app.vercel.app/ (default)
+ * - develop: https://pablodur2000.github.io/gmp-web-app/
  * - local: http://localhost:3000/gmp-web-app/
  * 
  * Set via environment variable: BASE_URL or APP_URL
- * Or use npm scripts: npm run test:local or npm run test:production
+ * Or use npm scripts: npm run test:local, npm run test:develop, or npm run test:production
  */
 const getBaseURL = (): string => {
   // Priority: BASE_URL > APP_URL > default (production)
-  const baseURL = process.env.BASE_URL || process.env.APP_URL || 'https://pablodur2000.github.io/gmp-web-app';
+  const baseURL = process.env.BASE_URL || process.env.APP_URL || 'https://gmp-web-app.vercel.app';
   
   // Ensure trailing slash
   return baseURL.endsWith('/') ? baseURL : `${baseURL}/`;
@@ -35,11 +36,14 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: [
+    ['html'],
+    ['json', { outputFile: 'playwright-report/results.json' }],
+  ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    /* Note: App uses basename="/gmp-web-app" so all routes are relative to this base */
+    /* Note: Production (Vercel) doesn't use basename, but develop (GitHub Pages) uses basename="/gmp-web-app" */
     baseURL: baseURL,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',

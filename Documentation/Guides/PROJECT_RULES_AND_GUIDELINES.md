@@ -430,6 +430,27 @@ await page.goto('http://localhost:3000/gmp-web-app/');
 
 ---
 
+## 📈 Test Reporting
+
+### Playwright HTML and JSON
+
+The project uses the default **Playwright HTML** report and a **JSON** reporter (`playwright-report/results.json`) for each run. The HTML report is uploaded as an artifact in CI; the JSON report is used to push run results to Notion.
+
+### Notion (Test Runs)
+
+UI regression runs are reported to **Notion** via a "Test Runs" database. Each run creates one row (Run date, Run name, Environment, Passed, Failed, Duration, Status, Artifact link). The run page shows:
+
+- **Passed tests**: one **table** with a "Test" column (quick list).
+- **Failed tests**: **one by one**, each with a heading and the error in a **quote** block (`>`).
+
+**CI**: After "Run Playwright tests", the workflow runs `scripts/notion-report-run.js` (with `if: always()` so failed runs are still reported). Required GitHub Secrets: `NOTION_API_KEY`, `NOTION_DATABASE_ID`. The script also needs `ENVIRONMENT` and `ARTIFACT_URL` (set by the workflow).
+
+**One-time setup**: Create a Notion page (e.g. "GMP UI Test Reports"), add a database "Test Runs" with properties: Run date (Date), Run name (Title), Environment (Select: develop | production), Passed (Number), Failed (Number), Duration (Number), Status (Select: Pass | Fail | Partial), Artifact link (URL). Share the database with your Notion integration and add the integration token and database ID as repo secrets. Add a **Calendar** view on "Run date" to see runs by day.
+
+**Local**: To test the script locally, run tests first so `playwright-report/results.json` exists, then set `NOTION_API_KEY`, `NOTION_DATABASE_ID`, and optionally `ENVIRONMENT`, `ARTIFACT_URL`, `RUN_NAME`, and run: `node scripts/notion-report-run.js [--report=path]`.
+
+---
+
 ## 📊 Test Categories and Tags
 
 ### Test Categories
