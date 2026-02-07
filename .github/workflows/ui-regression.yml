@@ -46,7 +46,6 @@ jobs:
           # Schedule → develop. Manual → chosen env (develop = Pages, production = Vercel)
           BASE_URL: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production') && 'https://gmp-web-app.vercel.app' || 'https://pablodur2000.github.io/gmp-web-app' }}
         run: npx playwright test --project=chromium --grep "@regression"
-        # Optional: add --reporter=junit,line for CI summary
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -63,3 +62,12 @@ jobs:
           name: test-results-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'develop' }}
           path: test-results/
           retention-days: 14
+
+      - name: Report run to Notion
+        if: always()
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          ENVIRONMENT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'develop' }}
+          ARTIFACT_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/notion-report-run.js --report=playwright-report/results.json
