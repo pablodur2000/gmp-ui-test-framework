@@ -6,14 +6,17 @@
  *
  * Usage:
  *   node scripts/notion-report-run.js [--report=path]
+ *   node scripts/notion-report-run.js --ai-only [--report=path]   # run AI first, write summary to file
+ *
+ * Modes:
+ *   Default: create Notion page and append blocks (summary from file if present, else failed/passed only).
+ *   --ai-only: only run AI and write summary to AI_SUMMARY_FILE (e.g. for a separate step before Notion).
  *
  * Env:
- *   NOTION_API_KEY, NOTION_DATABASE_ID (required)
+ *   NOTION_API_KEY, NOTION_DATABASE_ID (required except for --ai-only)
+ *   AI_SUMMARY_FILE (optional): path for AI summary text; default ai-summary.txt. Write in --ai-only, read in default.
  *   ENVIRONMENT, ARTIFACT_URL, RUN_NAME (optional)
- *   AI summary (optional): AI_SUMMARY_ENABLED=1 and either GROQ_API_KEY or GEMINI_API_KEY
- *     - Multiple keys: comma-separated (e.g. GROQ_API_KEY=key1,key2); we try each in order and fall back on failure
- *     - Groq: free tier, no card; get key at https://console.groq.com/keys
- *     - Gemini: free tier; get key at https://aistudio.google.com/apikey
+ *   AI keys (for --ai-only or inline): AI_SUMMARY_ENABLED=1 and GROQ_API_KEY and/or GEMINI_API_KEY (comma-separated for fallback)
  * Default report path: playwright-report/results.json
  */
 
@@ -42,8 +45,11 @@ const GEMINI_API_KEYS = (process.env.GEMINI_API_KEY || '')
   .map((k) => k.trim())
   .filter(Boolean);
 
+const AI_SUMMARY_FILE = process.env.AI_SUMMARY_FILE || 'ai-summary.txt';
+
 const NOTION_API = 'https://api.notion.com/v1';
 const RICH_TEXT_MAX = 2000; // Notion block content limit; truncate if longer
+const NOTION_CODE_BLOCK_MAX = 2000; // max chars per code block when splitting long traces
 
 // AI summary: one request with all failures in context; caps to stay within API input limits (~4k tokens)
 const AI_CONTEXT_MAX_CHARS = 12000; // total failure context sent in the single request (~3k tokens)
@@ -53,6 +59,14 @@ function getReportPath() {
   const arg = process.argv.find((a) => a.startsWith('--report='));
   if (arg) return path.resolve(ROOT, arg.slice('--report='.length));
   return path.join(ROOT, 'playwright-report', 'results.json');
+}
+
+function isAiOnlyMode() {
+  return process.argv.includes('--ai-only');
+}
+
+function getSummaryFilePath() {
+  return path.resolve(ROOT, AI_SUMMARY_FILE);
 }
 
 /**
@@ -88,6 +102,33 @@ function stripErrorAttachments(text) {
     out.push(line);
   }
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+const RETRY_SEPARATOR = '-----------------------------------------------------';
+const RETRY_HEADER_PADDING = ' ───────────────────────────────────────────────────────────────────────────────────────';
+
+/**
+ * Build full error body for a failed test: first run then "Retry #1", "Retry #2" with separators.
+ * Each run's message+stack is stripped of attachment lines. Matches pipeline output style (e.g. out.txt).
+ */
+function formatFailedErrorBody(results) {
+  const parts = [];
+  results.forEach((r, i) => {
+    const err = r.error || {};
+    const msg = err.message || 'No error message';
+    const stack = err.stack || '';
+    const runText = [msg, stack].filter(Boolean).join('\n\n');
+    const cleaned = stripErrorAttachments(runText);
+    if (!cleaned) return;
+    if (i === 0) {
+      parts.push(cleaned);
+    } else {
+      parts.push(
+        `${RETRY_SEPARATOR}\n\nRetry #${i}${RETRY_HEADER_PADDING}\n\n${cleaned}`
+      );
+    }
+  });
+  return parts.join('\n\n');
 }
 
 /**
@@ -129,24 +170,13 @@ function parseReport(data) {
             status: 'Passed',
           });
         } else if (outcome === 'failed' || outcome === 'unexpected') {
-          const parts = [];
-          results.forEach((r, i) => {
-            const err = r.error || {};
-            const msg = err.message || 'No error message';
-            const stack = err.stack || '';
-            if (results.length > 1) {
-              parts.push(`Run ${i + 1}: ${msg}`);
-              if (stack) parts.push(stack);
-            } else {
-              parts.push(msg);
-              if (stack) parts.push(stack);
-            }
-          });
-          const rawError = parts.join('\n\n');
+          const errorBody = formatFailedErrorBody(results);
+          const fileName = spec?.file ? path.basename(spec.file) : 'unknown';
           failed.push({
             fullTitle,
             title,
-            errorBody: stripErrorAttachments(rawError),
+            fileName,
+            errorBody,
           });
         }
       }
@@ -169,6 +199,28 @@ function truncate(text, max = RICH_TEXT_MAX) {
   if (typeof text !== 'string') return '';
   if (text.length <= max) return text;
   return text.slice(0, max - 3) + '…';
+}
+
+/**
+ * Split long text into chunks of at most maxLen, preferring to break on newlines.
+ */
+function splitTextChunks(text, maxLen = NOTION_CODE_BLOCK_MAX) {
+  if (typeof text !== 'string' || !text) return [];
+  if (text.length <= maxLen) return [text];
+  const chunks = [];
+  let rest = text;
+  while (rest.length > 0) {
+    if (rest.length <= maxLen) {
+      chunks.push(rest);
+      break;
+    }
+    const slice = rest.slice(0, maxLen);
+    const lastNewline = slice.lastIndexOf('\n');
+    const splitAt = lastNewline >= 0 ? lastNewline + 1 : maxLen;
+    chunks.push(rest.slice(0, splitAt));
+    rest = rest.slice(splitAt);
+  }
+  return chunks;
 }
 
 /**
@@ -318,9 +370,11 @@ async function createRunPage(ids, summary, runDateIso, runName, artifactUrl) {
 
 /**
  * Append blocks to a page. Notion accepts up to 100 children per request.
+ * Returns the list of created block ids in order (all batches concatenated).
  */
 async function appendBlocks(pageId, children) {
   const batchSize = 100;
+  const allCreatedIds = [];
   for (let i = 0; i < children.length; i += batchSize) {
     const batch = children.slice(i, i + batchSize);
     const res = await fetch(`${NOTION_API}/blocks/${pageId}/children`, {
@@ -336,7 +390,11 @@ async function appendBlocks(pageId, children) {
       const body = await res.text();
       throw new Error(`Notion append blocks failed: ${res.status} ${body}`);
     }
+    const data = await res.json();
+    const ids = (data.results || []).map((b) => b.id);
+    allCreatedIds.push(...ids);
   }
+  return allCreatedIds;
 }
 
 /**
@@ -350,7 +408,7 @@ function formatDuration(durationMs) {
 
 /**
  * Build block children: Failed first (heading + each failure), then Passed (heading + table).
- * Optionally prepend "Regression summary" (AI) when aiSummaryText is provided.
+ * Optionally prepend "Regression summary" when aiSummaryText is provided.
  */
 function buildBlocks(summary, aiSummaryText = null) {
   const blocks = [];
@@ -377,23 +435,35 @@ function buildBlocks(summary, aiSummaryText = null) {
       },
     });
     for (const f of summary.failed) {
+      const titleLine = `* ${f.fileName || 'unknown'} -> ${truncate(f.title || 'Unnamed', 500)}`;
       blocks.push({
         object: 'block',
-        type: 'heading_3',
-        heading_3: {
-          rich_text: [{ type: 'text', text: { content: truncate(f.fullTitle || f.title, 2000) } }],
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', text: { content: truncate(titleLine, RICH_TEXT_MAX) } }],
         },
       });
-      const errorBody =
-        f.errorBody ||
-        (f.errorMessage && f.errorStack
-          ? `${f.errorMessage}\n\n${f.errorStack}`
-          : f.errorMessage) ||
-        'No error details';
+      const errorBody = f.errorBody || 'No error details';
+      const fullIdentifier = f.fullTitle ? `1) ${f.fullTitle}` : '';
+      const traceContent = fullIdentifier ? `${fullIdentifier}\n\n${errorBody}` : errorBody;
+      const traceChunks = splitTextChunks(traceContent);
+      const toggleChildren = traceChunks.map((chunk) => ({
+        object: 'block',
+        type: 'code',
+        code: {
+          rich_text: [{ type: 'text', text: { content: chunk } }],
+          language: 'plain text',
+        },
+      }));
       blocks.push({
         object: 'block',
-        type: 'quote',
-        quote: { rich_text: richText(errorBody) },
+        type: 'toggle',
+        toggle: {
+          rich_text: [{ type: 'text', text: { content: '> Error details / trace' } }],
+          children: toggleChildren.length > 0 ? toggleChildren : [
+            { object: 'block', type: 'paragraph', paragraph: { rich_text: [{ type: 'text', text: { content: 'No details' } }] } },
+          ],
+        },
       });
     }
   }
@@ -441,11 +511,6 @@ function buildBlocks(summary, aiSummaryText = null) {
 }
 
 async function main() {
-  if (!NOTION_API_KEY || !NOTION_DATABASE_ID) {
-    console.error('Missing NOTION_API_KEY or NOTION_DATABASE_ID');
-    process.exit(1);
-  }
-
   const reportPath = getReportPath();
   if (!fs.existsSync(reportPath)) {
     console.error(`Report file not found: ${reportPath}`);
@@ -462,11 +527,53 @@ async function main() {
   }
 
   const summary = parseReport(data);
+
+  // --- AI-only step: run AI and write summary to file (run this step first in CI) ---
+  if (isAiOnlyMode()) {
+    if (summary.failed.length === 0) {
+      console.log('No failures; nothing to summarize.');
+      return;
+    }
+    if (GROQ_API_KEYS.length === 0 && GEMINI_API_KEYS.length === 0) {
+      console.error('GROQ_API_KEY or GEMINI_API_KEY required for --ai-only');
+      process.exit(1);
+    }
+    try {
+      const aiSummaryText = await getAISummary(summary.failed);
+      const outPath = getSummaryFilePath();
+      fs.writeFileSync(outPath, aiSummaryText || '', 'utf8');
+      console.log(`Wrote AI summary to ${outPath}`);
+    } catch (e) {
+      console.error('AI summary failed:', e.message);
+      process.exit(1);
+    }
+    return;
+  }
+
+  // --- Create Notion page and append blocks ---
+  if (!NOTION_API_KEY || !NOTION_DATABASE_ID) {
+    console.error('Missing NOTION_API_KEY or NOTION_DATABASE_ID');
+    process.exit(1);
+  }
+
   const now = new Date();
   const runDateIso = now.toISOString().slice(0, 10);
   const timeStr = now.toISOString().slice(11, 19);
   const runName =
     RUN_NAME || `Regression ${ENVIRONMENT} ${runDateIso} ${timeStr} UTC`;
+
+  let aiSummaryText = null;
+  const summaryPath = getSummaryFilePath();
+  if (fs.existsSync(summaryPath)) {
+    aiSummaryText = fs.readFileSync(summaryPath, 'utf8').trim();
+    if (!aiSummaryText) aiSummaryText = null;
+  } else if (
+    summary.failed.length > 0 &&
+    AI_SUMMARY_ENABLED &&
+    (GROQ_API_KEYS.length > 0 || GEMINI_API_KEYS.length > 0)
+  ) {
+    aiSummaryText = await getAISummary(summary.failed);
+  }
 
   try {
     const ids = await getDatabasePropertyIds();
@@ -477,14 +584,6 @@ async function main() {
       runName,
       ARTIFACT_URL
     );
-    let aiSummaryText = null;
-    if (
-      summary.failed.length > 0 &&
-      AI_SUMMARY_ENABLED &&
-      (GROQ_API_KEYS.length > 0 || GEMINI_API_KEYS.length > 0)
-    ) {
-      aiSummaryText = await getAISummary(summary.failed);
-    }
     const children = buildBlocks(summary, aiSummaryText);
     if (children.length > 0) {
       await appendBlocks(pageId, children);

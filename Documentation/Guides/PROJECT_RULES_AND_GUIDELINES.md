@@ -448,7 +448,7 @@ UI regression runs are reported to **Notion** via a "Test Runs" database. Each r
 - **Groq** (free, no credit card): add secret `GROQ_API_KEY` (get key at https://console.groq.com/keys).
 - **Google Gemini** (free tier): add secret `GEMINI_API_KEY` (get key at https://aistudio.google.com/apikey).
 
-**CI**: After "Run Playwright tests", the workflow runs `scripts/notion-report-run.js` (with `if: always()` so failed runs are still reported). Required GitHub Secrets: `NOTION_API_KEY`, `NOTION_DATABASE_ID`. Optional: `GROQ_API_KEY` or `GEMINI_API_KEY`, and set `AI_SUMMARY_ENABLED=1` in the workflow env to enable the AI summary. The script also needs `ENVIRONMENT` and `ARTIFACT_URL` (set by the workflow).
+**CI**: After "Run Playwright tests", the workflow has two steps: (1) **Report run to Notion** — creates the run page (failed/passed blocks; if there are failures, a "Regression summary" placeholder is added). (2) **AI regression summary** — runs in a separate step with `NOTION_AI_UPDATE_ONLY=1` and updates that placeholder with the AI-generated text. Required GitHub Secrets: `NOTION_API_KEY`, `NOTION_DATABASE_ID`. Optional: `GROQ_API_KEY` or `GEMINI_API_KEY` for the AI step. The script gets `ENVIRONMENT` and `ARTIFACT_URL` from the workflow.
 
 **One-time setup**: Create a Notion page (e.g. "GMP UI Test Reports"), add a database "Test Runs" with properties: Run date (Date), Run name (Title), Environment (Select: develop | production), Passed (Number), Failed (Number), Duration (Number), Status (Select: Pass | Fail | Partial), Artifact link (URL). Share the database with your Notion integration and add the integration token and database ID as repo secrets. Add a **Calendar** view on "Run date" to see runs by day.
 
