@@ -1,4 +1,8 @@
 import { Page } from '@playwright/test';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 /**
  * Base URL for the GMP Web App
@@ -8,13 +12,24 @@ import { Page } from '@playwright/test';
  * - develop: https://pablodur2000.github.io/gmp-web-app (WITH /gmp-web-app for GitHub Pages)
  * - local: http://localhost:3000 (no /gmp-web-app)
  * 
- * Note: Navigation functions use relative paths and rely on Playwright's baseURL config
- * The baseURL in playwright.config.ts handles the /gmp-web-app prefix for develop automatically
- * Set via environment variable: BASE_URL or APP_URL
+ * Note: Navigation functions use absolute URLs constructed from BASE_URL to ensure
+ * correct base path handling (especially for /gmp-web-app in develop environment).
+ * Set via environment variable: BASE_URL or APP_URL (loaded from .env file)
  */
 const getBaseURL = (): string => {
   // Priority: BASE_URL > APP_URL > default (production)
-  const baseURL = process.env.BASE_URL || process.env.APP_URL || 'https://gmp-web-app.vercel.app';
+  let baseURL = process.env.BASE_URL || process.env.APP_URL;
+  
+  // If BASE_URL is set but missing /gmp-web-app for develop, fix it
+  if (baseURL && baseURL.includes('pablodur2000.github.io') && !baseURL.includes('/gmp-web-app')) {
+    console.warn(`⚠️ WARNING: BASE_URL is missing /gmp-web-app! Fixing: ${baseURL} -> ${baseURL}/gmp-web-app`);
+    baseURL = `${baseURL}/gmp-web-app`;
+  }
+  
+  // Default to production if not set
+  if (!baseURL) {
+    baseURL = 'https://gmp-web-app.vercel.app';
+  }
   
   // Remove trailing slash for consistency
   return baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL;
@@ -33,47 +48,57 @@ export const BASE_URL = getBaseURL();
 /**
  * Navigate to the home page
  * @param page - Playwright Page object
- * Uses Playwright's baseURL from config (handles /gmp-web-app for develop automatically)
+ * Uses absolute URL to ensure correct base path (handles /gmp-web-app for develop)
  */
 export async function navigateToHome(page: Page): Promise<void> {
-  await page.goto('/');
+  // Use absolute URL to ensure baseURL is respected
+  const url = `${BASE_URL}/`;
+  await page.goto(url);
 }
 
 /**
  * Navigate to the catalog page
  * @param page - Playwright Page object
- * Uses Playwright's baseURL from config (handles /gmp-web-app for develop automatically)
+ * Uses absolute URL to ensure correct base path (handles /gmp-web-app for develop)
  */
 export async function navigateToCatalog(page: Page): Promise<void> {
-  await page.goto('/catalogo');
+  // Use absolute URL to ensure baseURL is respected
+  const url = `${BASE_URL}/catalogo`;
+  await page.goto(url);
 }
 
 /**
  * Navigate to a specific product detail page
  * @param page - Playwright Page object
  * @param productId - The product ID to navigate to
- * Uses Playwright's baseURL from config (handles /gmp-web-app for develop automatically)
+ * Uses absolute URL to ensure correct base path (handles /gmp-web-app for develop)
  */
 export async function navigateToProduct(page: Page, productId: string | number): Promise<void> {
-  await page.goto(`/producto/${productId}`);
+  // Use absolute URL to ensure baseURL is respected
+  const url = `${BASE_URL}/producto/${productId}`;
+  await page.goto(url);
 }
 
 /**
  * Navigate to the admin login page
  * @param page - Playwright Page object
- * Uses Playwright's baseURL from config (handles /gmp-web-app for develop automatically)
+ * Uses absolute URL to ensure correct base path (handles /gmp-web-app for develop)
  */
 export async function navigateToAdminLogin(page: Page): Promise<void> {
-  await page.goto('/admin/login');
+  // Use absolute URL to ensure baseURL is respected
+  const url = `${BASE_URL}/admin/login`;
+  await page.goto(url);
 }
 
 /**
  * Navigate to the admin dashboard
  * @param page - Playwright Page object
- * Uses Playwright's baseURL from config (handles /gmp-web-app for develop automatically)
+ * Uses absolute URL to ensure correct base path (handles /gmp-web-app for develop)
  */
 export async function navigateToAdminDashboard(page: Page): Promise<void> {
-  await page.goto('/admin/dashboard');
+  // Use absolute URL to ensure baseURL is respected
+  const url = `${BASE_URL}/admin/dashboard`;
+  await page.goto(url);
 }
 
 /**
