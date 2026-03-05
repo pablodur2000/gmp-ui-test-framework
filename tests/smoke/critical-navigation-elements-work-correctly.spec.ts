@@ -62,11 +62,16 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     await expect(logo).toBeVisible();
 
     await logo.click();
+    await page.waitForLoadState('networkidle'); // Wait for navigation
+    
     // Check home URL - extract pathname and verify it's the home path
     const url = new URL(page.url());
     const pathname = url.pathname;
-    // Home path should be '/' or end with '/' (handles both root and subdirectory deployments)
-    expect(pathname === '/' || pathname.endsWith('/')).toBe(true);
+    // Home path should be '/', '/gmp-web-app', or end with '/' (handles both root and subdirectory deployments)
+    const isHomePath = pathname === '/' || 
+                       pathname === '/gmp-web-app' || 
+                       pathname.endsWith('/');
+    expect(isHomePath).toBe(true);
 
     await navigateToCatalog(page);
     await page.waitForLoadState('networkidle');

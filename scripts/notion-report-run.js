@@ -4,6 +4,40 @@
  * Page order: Regression summary (AI, when enabled and there are failures), Failed tests first, then Passed table.
  * AI: one request per run with all failure context; output is placed at the top. Context is capped to stay within API limits.
  *
+ * --- Example formatted report (as shown in Notion) ---
+ *
+ *   Regression summary                    (heading_2, blue)
+ *   Brief AI summary text here...         (paragraph)
+ *
+ *   Failed tests                          (heading_2, red)
+ *   • catalog-page-product-count-displays-correctly.spec.ts → should display accurate product count...  (bulleted_list_item, red)
+ *   ▼ Error details / trace               (toggle, orange; expandable)
+ *       ┌─ plain text code block ─────────────────────────────────────┐
+ *       │ 1) [chromium] › tests/e2e/public/catalog-page/...spec.ts ›  │
+ *       │    CatalogPage - Product Count › should display accurate...  │
+ *       │                                                              │
+ *       │ Error: expect(received).toBe(expected) // Object.is equality │
+ *       │ Expected: 0                                                  │
+ *       │ Received: 3                                                  │
+ *       │   440 |       const noResultsCount = extractProductCount(...  │
+ *       │ > 442 |       expect(noResultsCount).toBe(0);                │
+ *       │   443 |       expect(noResultsCountText).toContain('0...     │
+ *       │   at .../catalog-page-product-count-displays-correctly.spec.ts:442:30
+ *       │                                                              │
+ *       │ -----------------------------------------------------        │
+ *       │ Retry #1 ───────────────────────────────────────────────    │
+ *       │ Error: expect(received).toBe(expected)...                    │
+ *       │ Expected: true                                                │
+ *       │ Received: false                                               │
+ *       │ ...                                                           │
+ *       └──────────────────────────────────────────────────────────────┘
+ *
+ *   Passed                                (heading_2, green)
+ *   | Test                    | Duration | Status |
+ *   | some-test.spec.ts       | 2.5s    | Passed |
+ *
+ * --- End example ---
+ *
  * Usage:
  *   node scripts/notion-report-run.js [--report=path]
  *   node scripts/notion-report-run.js --ai-only [--report=path]   # run AI first, write summary to file
@@ -83,8 +117,20 @@ function fullTestTitle(spec, test, projectName) {
 }
 
 /**
+ * Strip ANSI escape codes (e.g. [31m, [2m) so terminal colors don't appear as raw text in Notion.
+ */
+function stripAnsiCodes(text) {
+  if (typeof text !== 'string') return '';
+  return text
+    .replace(/\x1b\[[\d;]*m/g, '')
+    .replace(/\x1b\[[\d;]*[a-zA-Z]/g, '')
+    .replace(/\u001b\[[\d;]*m/g, '')
+    .replace(/\u001b\[[\d;]*[a-zA-Z]/g, '');
+}
+
+/**
  * Strip lines that mention attachments (screenshot, video, trace, test-results paths, Usage: npx).
- * Keeps error message, call log, code snippet, file:line.
+ * Keeps error message, call log, code snippet, file:line. Also strips ANSI codes from kept text.
  */
 function stripErrorAttachments(text) {
   if (typeof text !== 'string') return '';
@@ -101,7 +147,8 @@ function stripErrorAttachments(text) {
     if (/^attachment\s*#\d+/i.test(t)) continue;
     out.push(line);
   }
-  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const joined = out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return stripAnsiCodes(joined);
 }
 
 const RETRY_SEPARATOR = '-----------------------------------------------------';
@@ -287,8 +334,22 @@ async function getAISummary(failedList) {
   return null;
 }
 
-function richText(content) {
-  return [{ type: 'text', text: { content: truncate(content) } }];
+function richText(content, color = 'default') {
+  const annotations = {
+    bold: false,
+    italic: false,
+    strikethrough: false,
+    underline: false,
+    code: false,
+    color: color === 'default' ? 'default' : color,
+  };
+  return [
+    {
+      type: 'text',
+      text: { content: truncate(content) },
+      annotations,
+    },
+  ];
 }
 
 /**
@@ -417,7 +478,13 @@ function buildBlocks(summary, aiSummaryText = null) {
     blocks.push({
       object: 'block',
       type: 'heading_2',
-      heading_2: { rich_text: [{ type: 'text', text: { content: 'Regression summary' } }] },
+      heading_2: {
+        rich_text: [{
+          type: 'text',
+          text: { content: 'Regression summary' },
+          annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: 'blue' },
+        }],
+      },
     });
     blocks.push({
       object: 'block',
@@ -431,21 +498,30 @@ function buildBlocks(summary, aiSummaryText = null) {
       object: 'block',
       type: 'heading_2',
       heading_2: {
-        rich_text: [{ type: 'text', text: { content: 'Failed tests' } }],
+        rich_text: [{
+          type: 'text',
+          text: { content: 'Failed tests' },
+          annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: 'red' },
+        }],
       },
     });
     for (const f of summary.failed) {
-      const titleLine = `* ${f.fileName || 'unknown'} -> ${truncate(f.title || 'Unnamed', 500)}`;
+      const titleLine = `${f.fileName || 'unknown'} → ${truncate(f.title || 'Unnamed', 500)}`;
       blocks.push({
         object: 'block',
-        type: 'paragraph',
-        paragraph: {
-          rich_text: [{ type: 'text', text: { content: truncate(titleLine, RICH_TEXT_MAX) } }],
+        type: 'bulleted_list_item',
+        bulleted_list_item: {
+          rich_text: [{
+            type: 'text',
+            text: { content: truncate(titleLine, RICH_TEXT_MAX) },
+            annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: 'red' },
+          }],
         },
       });
       const errorBody = f.errorBody || 'No error details';
       const fullIdentifier = f.fullTitle ? `1) ${f.fullTitle}` : '';
-      const traceContent = fullIdentifier ? `${fullIdentifier}\n\n${errorBody}` : errorBody;
+      let traceContent = fullIdentifier ? `${fullIdentifier}\n\n${errorBody}` : errorBody;
+      traceContent = stripAnsiCodes(traceContent);
       const traceChunks = splitTextChunks(traceContent);
       const toggleChildren = traceChunks.map((chunk) => ({
         object: 'block',
@@ -459,7 +535,11 @@ function buildBlocks(summary, aiSummaryText = null) {
         object: 'block',
         type: 'toggle',
         toggle: {
-          rich_text: [{ type: 'text', text: { content: '> Error details / trace' } }],
+          rich_text: [{
+            type: 'text',
+            text: { content: '▼ Error details / trace' },
+            annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: 'orange' },
+          }],
           children: toggleChildren.length > 0 ? toggleChildren : [
             { object: 'block', type: 'paragraph', paragraph: { rich_text: [{ type: 'text', text: { content: 'No details' } }] } },
           ],
@@ -472,7 +552,13 @@ function buildBlocks(summary, aiSummaryText = null) {
     blocks.push({
       object: 'block',
       type: 'heading_2',
-      heading_2: { rich_text: [{ type: 'text', text: { content: 'Passed' } }] },
+      heading_2: {
+        rich_text: [{
+          type: 'text',
+          text: { content: 'Passed' },
+          annotations: { bold: false, italic: false, strikethrough: false, underline: false, code: false, color: 'green' },
+        }],
+      },
     });
     const headerRow = {
       object: 'block',
