@@ -1,20 +1,35 @@
 import { Page } from '@playwright/test';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 /**
  * Base URL for the GMP Web App
  * 
  * Supports multiple environments:
- * - production: https://gmp-web-app.vercel.app (default)
- * - develop: https://pablodur2000.github.io/gmp-web-app
- * - local: http://localhost:3000
+ * - production: https://gmp-web-app.vercel.app (default, no /gmp-web-app)
+ * - develop: https://pablodur2000.github.io/gmp-web-app (WITH /gmp-web-app for GitHub Pages)
+ * - local: http://localhost:3000 (no /gmp-web-app)
  * 
- * Note: All environments use root path (/) for routing
- * Set via environment variable: BASE_URL or APP_URL
- * This matches the baseURL in playwright.config.ts
+ * Note: Navigation functions use absolute URLs constructed from BASE_URL to ensure
+ * correct base path handling (especially for /gmp-web-app in develop environment).
+ * Set via environment variable: BASE_URL or APP_URL (loaded from .env file)
  */
 const getBaseURL = (): string => {
   // Priority: BASE_URL > APP_URL > default (production)
-  const baseURL = process.env.BASE_URL || process.env.APP_URL || 'https://gmp-web-app.vercel.app';
+  let baseURL = process.env.BASE_URL || process.env.APP_URL;
+  
+  // If BASE_URL is set but missing /gmp-web-app for develop, fix it
+  if (baseURL && baseURL.includes('pablodur2000.github.io') && !baseURL.includes('/gmp-web-app')) {
+    console.warn(`⚠️ WARNING: BASE_URL is missing /gmp-web-app! Fixing: ${baseURL} -> ${baseURL}/gmp-web-app`);
+    baseURL = `${baseURL}/gmp-web-app`;
+  }
+  
+  // Default to production if not set
+  if (!baseURL) {
+    baseURL = 'https://gmp-web-app.vercel.app';
+  }
   
   // Remove trailing slash for consistency
   return baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL;
@@ -33,42 +48,57 @@ export const BASE_URL = getBaseURL();
 /**
  * Navigate to the home page
  * @param page - Playwright Page object
+ * Uses absolute URL to ensure correct base path (handles /gmp-web-app for develop)
  */
 export async function navigateToHome(page: Page): Promise<void> {
-  await page.goto('/');
+  // Use absolute URL to ensure baseURL is respected
+  const url = `${BASE_URL}/`;
+  await page.goto(url);
 }
 
 /**
  * Navigate to the catalog page
  * @param page - Playwright Page object
+ * Uses absolute URL to ensure correct base path (handles /gmp-web-app for develop)
  */
 export async function navigateToCatalog(page: Page): Promise<void> {
-  await page.goto('/catalogo');
+  // Use absolute URL to ensure baseURL is respected
+  const url = `${BASE_URL}/catalogo`;
+  await page.goto(url);
 }
 
 /**
  * Navigate to a specific product detail page
  * @param page - Playwright Page object
  * @param productId - The product ID to navigate to
+ * Uses absolute URL to ensure correct base path (handles /gmp-web-app for develop)
  */
 export async function navigateToProduct(page: Page, productId: string | number): Promise<void> {
-  await page.goto(`/producto/${productId}`);
+  // Use absolute URL to ensure baseURL is respected
+  const url = `${BASE_URL}/producto/${productId}`;
+  await page.goto(url);
 }
 
 /**
  * Navigate to the admin login page
  * @param page - Playwright Page object
+ * Uses absolute URL to ensure correct base path (handles /gmp-web-app for develop)
  */
 export async function navigateToAdminLogin(page: Page): Promise<void> {
-  await page.goto('/admin/login');
+  // Use absolute URL to ensure baseURL is respected
+  const url = `${BASE_URL}/admin/login`;
+  await page.goto(url);
 }
 
 /**
  * Navigate to the admin dashboard
  * @param page - Playwright Page object
+ * Uses absolute URL to ensure correct base path (handles /gmp-web-app for develop)
  */
 export async function navigateToAdminDashboard(page: Page): Promise<void> {
-  await page.goto('/admin/dashboard');
+  // Use absolute URL to ensure baseURL is respected
+  const url = `${BASE_URL}/admin/dashboard`;
+  await page.goto(url);
 }
 
 /**
@@ -84,12 +114,12 @@ export function buildUrl(path: string): string {
   return `${BASE_URL}${cleanPath}`;
 }
 
-
 /**
  * Check if the current page URL pathname matches the expected path
  * Works with both root deployments (/) and subdirectory deployments (/gmp-web-app/)
  * @param page - Playwright Page object
  * @param expectedPath - The expected path (e.g., '/catalogo', '/admin/login')
+ * @returns Promise that resolves when pathname matches
  * 
  * @example
  * await expectPathname(page, '/catalogo'); // Matches both /catalogo and /gmp-web-app/catalogo
@@ -98,7 +128,7 @@ export async function expectPathname(page: Page, expectedPath: string): Promise<
   const url = new URL(page.url());
   const pathname = url.pathname;
   
-  // Normalize paths: remove trailing slashes for comparison (except root)
+  // Normalize paths: remove trailing slashes for comparison
   const normalizedPathname = pathname.endsWith('/') && pathname !== '/' 
     ? pathname.slice(0, -1) 
     : pathname;

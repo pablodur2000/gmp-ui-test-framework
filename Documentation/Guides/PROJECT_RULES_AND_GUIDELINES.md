@@ -430,6 +430,32 @@ await page.goto('http://localhost:3000/gmp-web-app/');
 
 ---
 
+## 📈 Test Reporting
+
+### Playwright HTML and JSON
+
+The project uses the default **Playwright HTML** report and a **JSON** reporter (`playwright-report/results.json`) for each run. The HTML report is uploaded as an artifact in CI; the JSON report is used to push run results to Notion.
+
+### Notion (Test Runs)
+
+UI regression runs are reported to **Notion** via a "Test Runs" database. Each run creates one row (Run date, Run name, Environment, Passed, Failed, Duration, Status, Artifact link). The run page content order is:
+
+- **Regression summary** (optional): brief AI-generated summary of failures when enabled (see below).
+- **Failed tests** (first): one by one, each with a heading and the error in a **quote** block (`>`), without attachment paths.
+- **Passed**: one **table** with columns Test, Duration, Status.
+
+**Optional AI summary**: If there are failures, the script can call a free AI API to generate a short regression summary (2–4 sentences). Set `AI_SUMMARY_ENABLED=1` and one of:
+- **Groq** (free, no credit card): add secret `GROQ_API_KEY` (get key at https://console.groq.com/keys).
+- **Google Gemini** (free tier): add secret `GEMINI_API_KEY` (get key at https://aistudio.google.com/apikey).
+
+**CI**: After "Run Playwright tests", the workflow has two steps: (1) **Report run to Notion** — creates the run page (failed/passed blocks; if there are failures, a "Regression summary" placeholder is added). (2) **AI regression summary** — runs in a separate step with `NOTION_AI_UPDATE_ONLY=1` and updates that placeholder with the AI-generated text. Required GitHub Secrets: `NOTION_API_KEY`, `NOTION_DATABASE_ID`. Optional: `GROQ_API_KEY` or `GEMINI_API_KEY` for the AI step. The script gets `ENVIRONMENT` and `ARTIFACT_URL` from the workflow.
+
+**One-time setup**: Create a Notion page (e.g. "GMP UI Test Reports"), add a database "Test Runs" with properties: Run date (Date), Run name (Title), Environment (Select: develop | production), Passed (Number), Failed (Number), Duration (Number), Status (Select: Pass | Fail | Partial), Artifact link (URL). Share the database with your Notion integration and add the integration token and database ID as repo secrets. Add a **Calendar** view on "Run date" to see runs by day.
+
+**Local**: To test the script locally, run tests first so `playwright-report/results.json` exists, then set `NOTION_API_KEY`, `NOTION_DATABASE_ID`, and optionally `ENVIRONMENT`, `ARTIFACT_URL`, `RUN_NAME`, and run: `node scripts/notion-report-run.js [--report=path]`.
+
+---
+
 ## 📊 Test Categories and Tags
 
 ### Test Categories

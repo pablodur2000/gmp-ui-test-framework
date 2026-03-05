@@ -12,8 +12,6 @@
     "test:trace": "npx playwright install --with-deps chromium && npx playwright test --trace on",
     "test:trace:ui": "npx playwright install --with-deps chromium && npx playwright test --trace on --ui",
     "test:report": "npx playwright show-report",
-    "test:report:allure": "npx allure generate allure-results -o allure-report --clean && npx allure open allure-report",
-    "test:report:allure:serve": "npx allure serve allure-results",
     "test:trace:view": "npx playwright show-trace",
     "test:codegen": "npx playwright codegen",
     "test:install": "npx playwright install --with-deps chromium",
@@ -40,8 +38,6 @@
   "devDependencies": {
     "@playwright/test": "^1.40.0",
     "@types/node": "^20.10.0",
-    "allure-commandline": "^2.29.0",
-    "allure-playwright": "^3.0.0",
     "cross-env": "^7.0.3",
     "typescript": "^5.2.2"
   },

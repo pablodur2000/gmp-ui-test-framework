@@ -313,6 +313,10 @@ test.describe('CatalogPage - Product Count Displays Correctly', () => {
           { timeout: 3000 }
         );
         
+        // Wait for isFiltering delay (100ms) + network request
+        await page.waitForTimeout(150);
+        await page.waitForLoadState('networkidle');
+        
         // Then wait for indicator to appear in count text (this happens after products reload)
         await page.waitForFunction(
           () => {
@@ -325,8 +329,6 @@ test.describe('CatalogPage - Product Count Displays Correctly', () => {
           },
           { timeout: 5000 }
         );
-        
-        await page.waitForLoadState('networkidle');
       } else {
         // If somehow still checked, uncheck and re-check to ensure clean state
         console.log('⚠️ Checkbox was already checked, unchecking and re-checking...');
@@ -340,8 +342,8 @@ test.describe('CatalogPage - Product Count Displays Correctly', () => {
           },
           { timeout: 3000 }
         );
+        await page.waitForTimeout(150); // Wait for isFiltering delay
         await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(300);
         
         await enStockCheckbox.click(); // Check again
         // Wait for checkbox to be checked
@@ -355,6 +357,10 @@ test.describe('CatalogPage - Product Count Displays Correctly', () => {
           { timeout: 3000 }
         );
         
+        // Wait for isFiltering delay (100ms) + network request
+        await page.waitForTimeout(150);
+        await page.waitForLoadState('networkidle');
+        
         // Wait for indicator to appear
         await page.waitForFunction(
           () => {
@@ -367,7 +373,6 @@ test.describe('CatalogPage - Product Count Displays Correctly', () => {
           },
           { timeout: 5000 }
         );
-        await page.waitForLoadState('networkidle');
       }
     } else {
       console.log('⚠️ Inventory checkbox not found, skipping inventory filter test');
@@ -415,25 +420,58 @@ test.describe('CatalogPage - Product Count Displays Correctly', () => {
     // Clear all filters first - need to reset both main category AND subcategory
     // "Todas" button only resets main category, not subcategory
     // Reuse todasCategoriasButton from Section 4
+    
+    // Clear subcategory filter first
     if (await todasCategoriasButton.count() > 0) {
+      const countBeforeClear = extractProductCount(await productCount.textContent() || '');
       await todasCategoriasButton.click();
+      // Wait for isFiltering delay (100ms) + network request
+      await page.waitForTimeout(150);
       await page.waitForLoadState('networkidle');
+      await waitForCountUpdate(page, countBeforeClear, 5000);
     }
     
+    // Clear main category filter
     if (await todasButton.count() > 0) {
+      const countBeforeClear = extractProductCount(await productCount.textContent() || '');
       await todasButton.click();
+      // Wait for isFiltering delay (100ms) + network request
+      await page.waitForTimeout(150);
       await page.waitForLoadState('networkidle');
+      await waitForCountUpdate(page, countBeforeClear, 5000);
     }
 
+    // Clear inventory filters
     if (await clearInventoryButton.count() > 0) {
+      const countBeforeClear = extractProductCount(await productCount.textContent() || '');
       await clearInventoryButton.click();
+      // Wait for isFiltering delay (100ms) + network request
+      await page.waitForTimeout(150);
       await page.waitForLoadState('networkidle');
+      await waitForCountUpdate(page, countBeforeClear, 5000);
     }
+
+    // Verify all filters are cleared
+    if (await enStockCheckbox.count() > 0) {
+      const isChecked = await enStockCheckbox.isChecked();
+      expect(isChecked).toBe(false);
+    }
+
+    // Verify search input is empty (filters clear search automatically)
+    if (await searchInput.count() > 0) {
+      const searchValue = await searchInput.inputValue();
+      expect(searchValue).toBe('');
+    }
+
+    // Capture count AFTER clearing filters (should be all products = 3)
+    const countAfterClearing = extractProductCount(await productCount.textContent() || '');
+    expect(countAfterClearing).toBeGreaterThan(0); // Should have products now
 
     // Search for non-existent term
     if (await searchInput.count() > 0) {
       await searchInput.fill('xyz123nonexistentproduct');
-      await waitForSearchComplete(page, combinedCount, 7000);
+      // Use countAfterClearing as previous count (should change from 3 to 0)
+      await waitForSearchComplete(page, countAfterClearing, 7000);
 
       // Verify product count shows "0 productos"
       const noResultsCountText = await productCount.textContent();
