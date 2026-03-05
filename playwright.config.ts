@@ -4,12 +4,12 @@ import { defineConfig, devices } from '@playwright/test';
  * Environment Configuration
  * 
  * Supports multiple environments:
- * - production: https://gmp-web-app.vercel.app/ (default)
- * - develop: https://pablodur2000.github.io/gmp-web-app/
- * - local: http://localhost:3000/
+ * - production: https://gmp-web-app.vercel.app/ (default, no /gmp-web-app)
+ * - develop: https://pablodur2000.github.io/gmp-web-app/ (WITH /gmp-web-app for GitHub Pages)
+ * - local: http://localhost:3000/ (no /gmp-web-app)
  * 
- * Note: All environments use root path (/) for routing
- * App routes use /catalogo, /producto/:id, etc. (no /gmp-web-app prefix in routes)
+ * Note: Navigation functions use relative paths (e.g., /catalogo)
+ * Playwright's baseURL automatically handles the /gmp-web-app prefix for develop
  * Set via environment variable: BASE_URL or APP_URL
  * Or use npm scripts: npm run test:local, npm run test:develop, or npm run test:production
  */

@@ -4,13 +4,13 @@ import { Page } from '@playwright/test';
  * Base URL for the GMP Web App
  * 
  * Supports multiple environments:
- * - production: https://gmp-web-app.vercel.app (default)
- * - develop: https://pablodur2000.github.io/gmp-web-app
- * - local: http://localhost:3000
+ * - production: https://gmp-web-app.vercel.app (default, no /gmp-web-app)
+ * - develop: https://pablodur2000.github.io/gmp-web-app (WITH /gmp-web-app for GitHub Pages)
+ * - local: http://localhost:3000 (no /gmp-web-app)
  * 
- * Note: All environments use root path (/) for routing
+ * Note: Navigation functions use relative paths and rely on Playwright's baseURL config
+ * The baseURL in playwright.config.ts handles the /gmp-web-app prefix for develop automatically
  * Set via environment variable: BASE_URL or APP_URL
- * This matches the baseURL in playwright.config.ts
  */
 const getBaseURL = (): string => {
   // Priority: BASE_URL > APP_URL > default (production)
@@ -33,6 +33,7 @@ export const BASE_URL = getBaseURL();
 /**
  * Navigate to the home page
  * @param page - Playwright Page object
+ * Uses Playwright's baseURL from config (handles /gmp-web-app for develop automatically)
  */
 export async function navigateToHome(page: Page): Promise<void> {
   await page.goto('/');
@@ -41,6 +42,7 @@ export async function navigateToHome(page: Page): Promise<void> {
 /**
  * Navigate to the catalog page
  * @param page - Playwright Page object
+ * Uses Playwright's baseURL from config (handles /gmp-web-app for develop automatically)
  */
 export async function navigateToCatalog(page: Page): Promise<void> {
   await page.goto('/catalogo');
@@ -50,6 +52,7 @@ export async function navigateToCatalog(page: Page): Promise<void> {
  * Navigate to a specific product detail page
  * @param page - Playwright Page object
  * @param productId - The product ID to navigate to
+ * Uses Playwright's baseURL from config (handles /gmp-web-app for develop automatically)
  */
 export async function navigateToProduct(page: Page, productId: string | number): Promise<void> {
   await page.goto(`/producto/${productId}`);
@@ -58,6 +61,7 @@ export async function navigateToProduct(page: Page, productId: string | number):
 /**
  * Navigate to the admin login page
  * @param page - Playwright Page object
+ * Uses Playwright's baseURL from config (handles /gmp-web-app for develop automatically)
  */
 export async function navigateToAdminLogin(page: Page): Promise<void> {
   await page.goto('/admin/login');
@@ -66,6 +70,7 @@ export async function navigateToAdminLogin(page: Page): Promise<void> {
 /**
  * Navigate to the admin dashboard
  * @param page - Playwright Page object
+ * Uses Playwright's baseURL from config (handles /gmp-web-app for develop automatically)
  */
 export async function navigateToAdminDashboard(page: Page): Promise<void> {
   await page.goto('/admin/dashboard');
@@ -84,12 +89,12 @@ export function buildUrl(path: string): string {
   return `${BASE_URL}${cleanPath}`;
 }
 
-
 /**
  * Check if the current page URL pathname matches the expected path
  * Works with both root deployments (/) and subdirectory deployments (/gmp-web-app/)
  * @param page - Playwright Page object
  * @param expectedPath - The expected path (e.g., '/catalogo', '/admin/login')
+ * @returns Promise that resolves when pathname matches
  * 
  * @example
  * await expectPathname(page, '/catalogo'); // Matches both /catalogo and /gmp-web-app/catalogo
@@ -98,7 +103,7 @@ export async function expectPathname(page: Page, expectedPath: string): Promise<
   const url = new URL(page.url());
   const pathname = url.pathname;
   
-  // Normalize paths: remove trailing slashes for comparison (except root)
+  // Normalize paths: remove trailing slashes for comparison
   const normalizedPathname = pathname.endsWith('/') && pathname !== '/' 
     ? pathname.slice(0, -1) 
     : pathname;
