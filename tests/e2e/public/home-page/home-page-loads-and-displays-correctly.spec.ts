@@ -107,19 +107,11 @@ test.describe('HomePage - Loads and Displays Correctly', () => {
     const locationHeading = page.locator(TestSelectors.homeLocationHeading);
     await expect(locationHeading).toBeVisible();
 
-    await expect(page.locator(TestSelectors.homeLocationInfoCardTiendaFisica)).toBeVisible();
+    // Verify shipping and quality guarantee cards (Tienda Física card removed)
     await expect(page.locator(TestSelectors.homeLocationInfoCardEnvios)).toBeVisible();
     await expect(page.locator(TestSelectors.homeLocationInfoCardGarantia)).toBeVisible();
 
-    // Verify address text (in address card)
-    const addressText = page.locator(TestSelectors.homeLocationAddressText);
-    await expect(addressText).toBeVisible();
-
-    // Verify map address (in map section)
-    const mapAddress = page.locator(TestSelectors.homeLocationMapAddress);
-    await expect(mapAddress).toBeVisible();
-
-    await expect(page.locator(TestSelectors.homeLocationVerMapaButton)).toBeVisible();
+    // Verify tracking link (map button and address removed)
     await expect(page.locator(TestSelectors.homeLocationRastrearEnvioLink)).toBeVisible();
 
     // ============================================================================

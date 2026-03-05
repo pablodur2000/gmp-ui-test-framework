@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { navigateToCatalog } from '../../../utils/navigation';
+import { navigateToCatalog, expectPathname } from '../../../utils/navigation';
 import { TestSelectors } from '../../../utils/selectors';
 import {
   trackPageLoad,
   monitorAndCheckConsoleErrors,
-  waitForFirstVisitAnimation,
   setupSupabaseListener,
   verifyImagesLoad,
   waitForElementInViewport,
@@ -41,18 +40,13 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
       3  // warn if > 3 seconds
     );
 
-    // Wait for first-visit animation (if present)
-    await waitForFirstVisitAnimation(page, 3000).catch(() => {
-      // Animation might not be present, continue anyway
-    });
-
     // Monitor console errors
     await monitorAndCheckConsoleErrors(page, 1000);
 
     // ============================================================================
     // SECTION 1: Page Load and Basic Verification
     // ============================================================================
-    await expect(page).toHaveURL(/\/catalogo/);
+    await expectPathname(page, '/catalogo');
     await expect(page).toHaveTitle(/catálogo|catalog|productos/i);
 
     // Verify catalog page container

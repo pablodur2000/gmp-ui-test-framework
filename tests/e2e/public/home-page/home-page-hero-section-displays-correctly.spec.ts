@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { navigateToHome, navigateToCatalog } from '../../../utils/navigation';
+import { navigateToHome, navigateToCatalog, expectPathname } from '../../../utils/navigation';
 import { TestSelectors } from '../../../utils/selectors';
 import { waitForFirstVisitAnimation, waitForHoverEffect, waitForScrollToComplete } from '../../../utils/wait-helpers';
 
@@ -218,10 +218,10 @@ test.describe('HomePage - Hero Section', () => {
     }
 
     await Promise.all([
-      page.waitForURL(/\/catalogo/, { timeout: 5000 }),
+      page.waitForURL((url) => new URL(url).pathname.endsWith('/catalogo'), { timeout: 5000 }),
       ctaButton.click()
     ]);
-    await expect(page).toHaveURL(/\/catalogo/);
+    await expectPathname(page, '/catalogo');
 
     await navigateToHome(page);
     await page.waitForLoadState('networkidle');

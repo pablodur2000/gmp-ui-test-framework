@@ -17,6 +17,7 @@ export {
   navigateToAdminLogin,
   navigateToAdminDashboard,
   buildUrl,
+  expectPathname,
 } from './navigation';
 
 // Selectors
@@ -60,3 +61,10 @@ export {
   waitForElementInViewport,
   waitForHoverEffect,
 } from './wait-helpers';
+
+// Catalog Helpers
+export {
+  extractProductCount,
+  waitForCountUpdate,
+  waitForSearchComplete,
+} from './catalog-helpers';

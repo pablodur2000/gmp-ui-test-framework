@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { navigateToHome } from '../../../utils/navigation';
+import { navigateToHome, expectPathname } from '../../../utils/navigation';
 import { TestSelectors } from '../../../utils/selectors';
 import { waitForFirstVisitAnimation, waitForHoverEffect, waitForElementInViewport, waitForScrollToComplete } from '../../../utils/wait-helpers';
 
@@ -71,11 +71,11 @@ test.describe('HomePage - Navigation to Catalog', () => {
     }
 
     await Promise.all([
-      page.waitForURL(/\/catalogo/, { timeout: 5000 }),
+      page.waitForURL((url) => new URL(url).pathname.endsWith('/catalogo'), { timeout: 5000 }),
       heroCtaButton.click()
     ]);
 
-    await expect(page).toHaveURL(/\/catalogo/);
+    await expectPathname(page, '/catalogo');
     console.log('✅ Hero CTA button navigation works');
 
     await page.goBack();
@@ -113,11 +113,11 @@ test.describe('HomePage - Navigation to Catalog', () => {
     }
 
     await Promise.all([
-      page.waitForURL(/\/catalogo/, { timeout: 5000 }),
+      page.waitForURL((url) => new URL(url).pathname.endsWith('/catalogo'), { timeout: 5000 }),
       ctaButton.click()
     ]);
 
-    await expect(page).toHaveURL(/\/catalogo/);
+    await expectPathname(page, '/catalogo');
     console.log('✅ CTA section button navigation works');
 
     await page.goBack();
@@ -140,11 +140,11 @@ test.describe('HomePage - Navigation to Catalog', () => {
       await waitForHoverEffect(page, TestSelectors.headerCtaButton || 'button', 'backgroundColor', 300);
 
       await Promise.all([
-        page.waitForURL(/\/catalogo/, { timeout: 5000 }),
+        page.waitForURL((url) => new URL(url).pathname.endsWith('/catalogo'), { timeout: 5000 }),
         headerCtaButton.click()
       ]);
 
-      await expect(page).toHaveURL(/\/catalogo/);
+      await expectPathname(page, '/catalogo');
       console.log('✅ Header CTA button navigation works');
 
       // ============================================================================
@@ -160,8 +160,8 @@ test.describe('HomePage - Navigation to Catalog', () => {
 
       if (await headerCtaButton.count() > 0) {
         await headerCtaButton.click();
-        await page.waitForURL(/\/catalogo/, { timeout: 5000 });
-        await expect(page).toHaveURL(/\/catalogo/);
+        await page.waitForURL((url) => new URL(url).pathname.endsWith('/catalogo'), { timeout: 5000 });
+        await expectPathname(page, '/catalogo');
         console.log('✅ Header CTA works from scrolled position');
       }
     } else {
@@ -177,12 +177,16 @@ test.describe('HomePage - Navigation to Catalog', () => {
     const heroCtaButtonForHistory = page.locator(TestSelectors.homeHeroCtaButton);
     await expect(heroCtaButtonForHistory).toBeVisible();
     await heroCtaButtonForHistory.click();
-    await page.waitForURL(/\/catalogo/, { timeout: 5000 });
+    await page.waitForURL((url) => new URL(url).pathname.endsWith('/catalogo'), { timeout: 5000 });
 
     await page.goBack();
     await page.waitForLoadState('networkidle');
 
-    await expect(page).toHaveURL(/\/gmp-web-app\/?$/);
+    // Check home URL - extract pathname and verify it's the home path
+    const url = new URL(page.url());
+    const pathname = url.pathname;
+    // Home path should be '/' or end with '/' (handles both root and subdirectory deployments)
+    expect(pathname === '/' || pathname.endsWith('/')).toBe(true);
     console.log('✅ Browser history management works correctly');
   });
 });

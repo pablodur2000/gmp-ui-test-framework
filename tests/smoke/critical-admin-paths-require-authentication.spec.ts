@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { navigateToHome, navigateToAdminLogin, navigateToAdminDashboard } from '../utils/navigation';
+import { navigateToHome, navigateToAdminLogin, navigateToAdminDashboard, expectPathname } from '../utils/navigation';
 import { TestSelectors } from '../utils/selectors';
 import { monitorAndCheckConsoleErrors } from '../utils/console-monitor';
 import { trackRedirect } from '../utils/performance-tracker';
@@ -34,7 +34,7 @@ test.describe('Smoke Test - Critical Admin Paths', () => {
     // SECTION 1: Page Load and Basic Elements
     // ============================================================================
     // Verify we're on the correct page (URL check is more reliable than title)
-    await expect(page).toHaveURL(/\/admin\/login/);
+    await expectPathname(page, '/admin/login');
     
     // Verify page title (may vary, so check URL is more reliable)
     // Title might be "Artesanías en Cuero - Catálogo Familiar" if not set properly
@@ -179,7 +179,7 @@ test.describe('Smoke Test - Critical Admin Paths', () => {
     // - Server-side redirect processing
     // - Login page loading
     expect(redirectTime).toBeLessThan(2.5);
-    await expect(page).toHaveURL(/\/admin\/login/);
+    await expectPathname(page, '/admin/login');
     console.log(`✅ Redirect happened in ${redirectTime.toFixed(2)}s`);
 
     // ============================================================================
@@ -197,8 +197,8 @@ test.describe('Smoke Test - Critical Admin Paths', () => {
     // SECTION 3: Verify Redirect Persistence
     // ============================================================================
     await navigateToAdminDashboard(page);
-    await page.waitForURL(/\/admin\/login/, { timeout: 5000 });
-    await expect(page).toHaveURL(/\/admin\/login/);
+    await page.waitForURL((url) => new URL(url).pathname.endsWith('/admin/login'), { timeout: 5000 });
+    await expectPathname(page, '/admin/login');
     console.log('✅ Redirect persists on repeated access');
 
     // ============================================================================

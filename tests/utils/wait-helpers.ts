@@ -188,7 +188,7 @@ export async function waitForElementInViewport(
   selector: string,
   timeout: number = 2000
 ): Promise<void> {
-  const element = page.locator(selector);
+  const element = page.locator(selector).first();
   await element.scrollIntoViewIfNeeded();
   
   await page.waitForFunction(

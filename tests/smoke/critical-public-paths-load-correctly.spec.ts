@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { navigateToHome, navigateToCatalog, navigateToProduct } from '../utils/navigation';
+import { navigateToHome, navigateToCatalog, navigateToProduct, expectPathname } from '../utils/navigation';
 import { TestSelectors } from '../utils/selectors';
 import { trackPageLoad, monitorAndCheckConsoleErrors } from '../utils';
 import { setupSupabaseListener } from '../utils/api-listener';
@@ -97,17 +97,12 @@ test.describe('Smoke Test - Critical Public Paths', () => {
 
     await expect(locationSection).toBeVisible();
 
-    await expect(page.locator(TestSelectors.homeLocationInfoCardTiendaFisica)).toBeVisible();
+    // Verify shipping and quality guarantee cards (Tienda Física card removed)
     await expect(page.locator(TestSelectors.homeLocationInfoCardEnvios)).toBeVisible();
     await expect(page.locator(TestSelectors.homeLocationInfoCardGarantia)).toBeVisible();
 
-    // Verify address text (in address card)
-    const addressText = page.locator(TestSelectors.homeLocationAddressText);
-    await expect(addressText).toBeVisible();
-
-    // Verify map address (in map section)
-    const mapAddress = page.locator(TestSelectors.homeLocationMapAddress);
-    await expect(mapAddress).toBeVisible();
+    // Verify tracking link
+    await expect(page.locator(TestSelectors.homeLocationRastrearEnvioLink)).toBeVisible();
 
     // ============================================================================
     // SECTION 5: Featured Products Section with Supabase Data
@@ -322,7 +317,7 @@ test.describe('Smoke Test - Critical Public Paths', () => {
     // SECTION 1: Page Load and URL Verification
     // ============================================================================
     // Verify URL contains product ID (more reliable than title check)
-    await expect(page).toHaveURL(new RegExp(`/producto/${productId}`, 'i'));
+    await expectPathname(page, `/producto/${productId}`);
     
     // Verify page title (default site title, not product-specific)
     await expect(page).toHaveTitle(/Artesanías en Cuero|GMP/i);
@@ -371,10 +366,10 @@ test.describe('Smoke Test - Critical Public Paths', () => {
     if (await backButton.count() > 0) {
       await expect(backButton).toBeVisible();
       await Promise.all([
-        page.waitForURL(/\/catalogo/, { timeout: 5000 }),
+        page.waitForURL((url) => new URL(url).pathname.endsWith('/catalogo'), { timeout: 5000 }),
         backButton.click()
       ]);
-      await expect(page).toHaveURL(/\/catalogo/);
+      await expectPathname(page, '/catalogo');
       console.log('✅ Back to catalog navigation works');
     }
   });

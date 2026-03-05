@@ -147,6 +147,13 @@ tests/
 │           ├── admin-dashboard-filter-activity-by-update-action-works-correctly.spec.ts
 │           ├── admin-dashboard-filter-activity-by-delete-action-works-correctly.spec.ts
 │           └── admin-dashboard-delete-activity-log-works-correctly.spec.ts
+│       │
+│       └── category-management/
+│           ├── admin-dashboard-view-categories-displays-correctly.spec.ts
+│           ├── admin-dashboard-create-category-works-correctly.spec.ts
+│           ├── admin-dashboard-edit-category-works-correctly.spec.ts
+│           ├── admin-dashboard-delete-category-works-correctly.spec.ts
+│           └── admin-dashboard-search-categories-works-correctly.spec.ts
 │
 ├── smoke/
 │   ├── critical-public-paths-load-correctly.spec.ts
@@ -156,7 +163,8 @@ tests/
 └── integration/
     ├── complete-product-browsing-flow-from-home-to-detail.spec.ts
     ├── complete-admin-product-management-flow-create-edit-delete.spec.ts
-    └── complete-admin-sales-management-flow-view-and-update-status.spec.ts
+    ├── complete-admin-sales-management-flow-view-and-update-status.spec.ts
+    └── complete-admin-category-management-flow-create-edit-delete.spec.ts
 ```
 
 ---
@@ -242,7 +250,68 @@ tests/
    - `e2e/admin/activity-logs/admin-dashboard-filter-activity-by-create-action-works-correctly.spec.ts`
    - `e2e/admin/activity-logs/admin-dashboard-delete-activity-log-works-correctly.spec.ts`
 
-### Phase 6: Integration Tests (Week 6)
+### Phase 6: Admin Category Management (Week 6)
+**Goal:** Test CRUD operations for categories
+
+**Related Feature:** GMP-40 - Category Management (Create, Edit, Delete)  
+**Jira Ticket:** QA-XX (To be created - Test Case: Admin Dashboard - Category Management E2E Tests)  
+**Parent Epic:** QA Epic for Admin Dashboard Testing (links to GMP-17)
+
+**Test Coverage:**
+- View categories list (grouped by main category)
+- Create new categories with validation
+- Edit existing categories
+- Delete categories (with protection for categories with products)
+- Search categories by name
+- Verify product count displays correctly
+- Verify view toggle behavior
+
+**Test Files (Consolidated - 5 comprehensive tests):**
+
+1. **View Categories List and Display**
+   - `e2e/admin/category-management/admin-dashboard-view-categories-displays-correctly.spec.ts`
+     - Verify "Gestionar Categorías" quick action card and view toggle
+     - Verify categories list displays correctly
+     - Verify categories grouped by main category (Cuero/Macramé)
+     - Verify category product count displays correctly
+     - Verify loading and empty states
+     - Verify view toggle behavior with other quick action cards
+
+2. **Create Category with Validation**
+   - `e2e/admin/category-management/admin-dashboard-create-category-works-correctly.spec.ts`
+     - Create category with valid data
+     - Test form validation (empty name, empty description)
+     - Verify category appears in list after creation
+     - Verify activity log entry is created
+
+3. **Edit Category**
+   - `e2e/admin/category-management/admin-dashboard-edit-category-works-correctly.spec.ts`
+     - Edit category name, description, main category
+     - Verify updates persist and category moves to correct group
+     - Verify activity log entry is created
+
+4. **Delete Category (Both Scenarios)**
+   - `e2e/admin/category-management/admin-dashboard-delete-category-works-correctly.spec.ts`
+     - Delete category with 0 products (success)
+     - Attempt to delete category with products (error message)
+     - Verify deletion confirmation modal
+     - Verify activity log entry for successful deletion
+
+5. **Search Categories**
+   - `e2e/admin/category-management/admin-dashboard-search-categories-works-correctly.spec.ts`
+     - Search by name (exact and partial matches)
+     - Verify filtered results
+     - Verify search clear functionality
+     - Test case-insensitive search
+
+**Estimated Time:** 25-35 minutes (all 5 tests combined)
+
+**Integration Test:**
+- `integration/complete-admin-category-management-flow-create-edit-delete.spec.ts`
+  - Complete flow: Login → View → Create → Edit → Search → Delete
+  - Estimated Time: 2-3 minutes
+
+### Phase 7: Integration Tests (Week 7)
 **Goal:** Test complete user flows end-to-end
 
 1. **Public Flow**
@@ -251,6 +320,7 @@ tests/
 2. **Admin Flow**
    - `integration/complete-admin-product-management-flow-create-edit-delete.spec.ts`
    - `integration/complete-admin-sales-management-flow-view-and-update-status.spec.ts`
+   - `integration/complete-admin-category-management-flow-create-edit-delete.spec.ts`
 
 ---
 
@@ -362,6 +432,7 @@ Tests should be tagged to enable selective execution in CI/CD:
    - `@product-management` - Product CRUD operations
    - `@sales-management` - Sales operations
    - `@activity-logs` - Activity log features
+   - `@category-management` - Category CRUD operations
 
 4. **Stability Tags**
    - `@stable` - Stable, reliable tests
@@ -398,7 +469,7 @@ test('complete product flow', {
 
 - **Shard 1/4:** Public routes (home, catalog, product detail)
 - **Shard 2/4:** Admin authentication + dashboard
-- **Shard 3/4:** Admin product management
+- **Shard 3/4:** Admin product management + category management
 - **Shard 4/4:** Admin sales + activity logs + integration tests
 
 **Benefits:**
