@@ -81,11 +81,16 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     const logoAfterNav = headerAfterNav.locator(TestSelectors.headerLogo);
     await expect(logoAfterNav).toBeVisible();
     await logoAfterNav.click();
+    await page.waitForLoadState('networkidle'); // Wait for navigation
+    
     // Check home URL - extract pathname and verify it's the home path
     const urlAfterNav = new URL(page.url());
     const pathnameAfterNav = urlAfterNav.pathname;
-    // Home path should be '/' or end with '/' (handles both root and subdirectory deployments)
-    expect(pathnameAfterNav === '/' || pathnameAfterNav.endsWith('/')).toBe(true);
+    // Home path should be '/', '/gmp-web-app', or end with '/' (handles both root and subdirectory deployments)
+    const isHomePathAfterNav = pathnameAfterNav === '/' || 
+                                pathnameAfterNav === '/gmp-web-app' || 
+                                pathnameAfterNav.endsWith('/');
+    expect(isHomePathAfterNav).toBe(true);
 
     // ============================================================================
     // SECTION 2: Verify Navigation Links
@@ -100,13 +105,16 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     await expect(catalogLink).toBeVisible();
 
     await homeLink.click();
+    await page.waitForLoadState('networkidle'); // Wait for navigation
+    
     // Check home URL - extract pathname and verify it's the home path
     const urlAfterHomeClick = new URL(page.url());
     const pathnameAfterHomeClick = urlAfterHomeClick.pathname;
-    // Home path should be '/' or end with '/' (handles both root and subdirectory deployments)
-    expect(pathnameAfterHomeClick === '/' || pathnameAfterHomeClick.endsWith('/')).toBe(true);
-    // Wait for navigation to complete and page to be stable
-    await page.waitForLoadState('networkidle');
+    // Home path should be '/', '/gmp-web-app', or end with '/' (handles both root and subdirectory deployments)
+    const isHomePathAfterHomeClick = pathnameAfterHomeClick === '/' || 
+                                      pathnameAfterHomeClick === '/gmp-web-app' || 
+                                      pathnameAfterHomeClick.endsWith('/');
+    expect(isHomePathAfterHomeClick).toBe(true);
 
     // Wait for first-visit hero animation to finish so header (and catalog link) is visible (CI lands on home with fresh state)
     await page.locator('[data-testid="home-hero-first-visit-curtain"]').waitFor({ state: 'hidden', timeout: 12000 }).catch(() => {});
@@ -141,7 +149,7 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     await homeLinkForHover.hover();
     
     // Wait for CSS transition to complete using hover effect helper
-    await waitForHoverEffect(page, TestSelectors.headerNavHomeLink || 'a[href="/"]', 'color', 200).catch(() => {
+    await waitForHoverEffect(page, TestSelectors.headerNavHomeLink, 'color', 200).catch(() => {
       // Continue anyway - test will verify actual color change
     });
 
@@ -159,8 +167,7 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     // ============================================================================
     // Re-scope catalog link to header navigation (desktop nav only, exclude mobile menu)
     const headerForDropdown = page.locator(TestSelectors.header);
-    // Get the first nav element (desktop nav, mobile menu is usually second or has different structure)
-    const headerNavForDropdown = headerForDropdown.locator('nav').first();
+    const headerNavForDropdown = headerForDropdown.locator(TestSelectors.headerNav);
     
     const catalogLinkForDropdown = headerNavForDropdown.locator(TestSelectors.headerNavCatalogLink);
     
@@ -272,7 +279,9 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
       return scrollY >= 900; // Close to target (1000)
     }, { timeout: 2000 });
 
-    const scrolledHeaderPosition = await header.boundingBox();
+    // Re-scope header after scroll to ensure we get current header
+    const headerAfterScroll = page.locator(TestSelectors.header);
+    const scrolledHeaderPosition = await headerAfterScroll.boundingBox();
 
     if (scrolledHeaderPosition && initialHeaderPosition) {
       const isSticky = scrolledHeaderPosition.y <= 10;
@@ -286,11 +295,16 @@ test.describe('Smoke Test - Critical Navigation Elements', () => {
     const logoFinal = headerFinal.locator(TestSelectors.headerLogo);
     await expect(logoFinal).toBeVisible();
     await logoFinal.click();
+    await page.waitForLoadState('networkidle'); // Wait for navigation
+    
     // Check home URL - extract pathname and verify it's the home path
     const urlFinal = new URL(page.url());
     const pathnameFinal = urlFinal.pathname;
-    // Home path should be '/' or end with '/' (handles both root and subdirectory deployments)
-    expect(pathnameFinal === '/' || pathnameFinal.endsWith('/')).toBe(true);
+    // Home path should be '/', '/gmp-web-app', or end with '/' (handles both root and subdirectory deployments)
+    const isHomePathFinal = pathnameFinal === '/' || 
+                             pathnameFinal === '/gmp-web-app' || 
+                             pathnameFinal.endsWith('/');
+    expect(isHomePathFinal).toBe(true);
   });
 });
 
