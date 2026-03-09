@@ -22,7 +22,7 @@ import { waitForElementInViewport, verifyImagesLoad, waitForFirstVisitAnimation 
  * 
  * Tags: @regression, @e2e, @public, @homepage, @desktop, @development, @staging, @production
  */
-test.describe('HomePage - Loads and Displays Correctly', () => {
+test.describe('HomePage - Loads and Displays Correctly (QA-8)', () => {
   test('should load all sections correctly with animations and Supabase data', {
     tag: ['@regression', '@e2e', '@public', '@homepage', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {

@@ -27,7 +27,7 @@ import {
  * 
  * Tags: @regression, @e2e, @public, @catalog, @desktop, @development, @staging, @production
  */
-test.describe('CatalogPage - Product Count Displays Correctly', () => {
+test.describe('CatalogPage - Product Count Displays Correctly (QA-22)', () => {
   test('should display accurate product count with filters and search', {
     tag: ['@regression', '@e2e', '@public', '@catalog', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {

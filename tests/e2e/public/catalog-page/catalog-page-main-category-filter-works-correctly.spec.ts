@@ -27,7 +27,7 @@ import {
  * 
  * Tags: @regression, @e2e, @public, @catalog, @desktop, @development, @staging, @production
  */
-test.describe('CatalogPage - Main Category Filter Works Correctly', () => {
+test.describe('CatalogPage - Main Category Filter Works Correctly (QA-23)', () => {
   test('should filter products correctly by main category with proper button states', {
     tag: ['@regression', '@e2e', '@public', '@catalog', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {

@@ -19,7 +19,7 @@ import { waitForFirstVisitAnimation, waitForHoverEffect, waitForElementInViewpor
  * 
  * Tags: @regression, @e2e, @public, @homepage, @navigation, @desktop, @development, @staging, @production
  */
-test.describe('HomePage - Navigation to Catalog', () => {
+test.describe('HomePage - Navigation to Catalog (QA-10)', () => {
   test('should navigate to catalog from all CTA buttons correctly', {
     tag: ['@regression', '@e2e', '@public', '@homepage', '@navigation', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {

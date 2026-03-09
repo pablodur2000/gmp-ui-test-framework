@@ -26,7 +26,7 @@ import {
  * 
  * Tags: @regression, @e2e, @public, @catalog, @desktop, @development, @staging, @production
  */
-test.describe('CatalogPage - Loads and Displays All Products', () => {
+test.describe('CatalogPage - Loads and Displays All Products (QA-21)', () => {
   test('should load all products correctly with proper layout and API verification', {
     tag: ['@regression', '@e2e', '@public', '@catalog', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {

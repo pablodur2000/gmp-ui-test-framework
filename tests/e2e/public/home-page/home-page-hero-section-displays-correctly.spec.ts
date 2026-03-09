@@ -20,7 +20,7 @@ import { waitForFirstVisitAnimation, waitForHoverEffect, waitForScrollToComplete
  * 
  * Tags: @regression, @e2e, @public, @homepage, @hero, @desktop, @development, @staging, @production
  */
-test.describe('HomePage - Hero Section', () => {
+test.describe('HomePage - Hero Section (QA-9)', () => {
   test.setTimeout(300000); // 5 minutes for carousel cycles
 
   test('should display hero section with carousel, animations, and interactions', {

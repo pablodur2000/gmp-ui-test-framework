@@ -22,7 +22,7 @@ import { waitForScrollToComplete, waitForElementInViewport, waitForFirstVisitAni
  * 
  * Tags: @regression, @smoke, @heartbeat, @desktop, @development, @staging, @production
  */
-test.describe('Smoke Test - Critical Public Paths', () => {
+test.describe('Smoke Test - Critical Public Paths (QA-5)', () => {
   test('should load HomePage correctly with all sections and Supabase data', {
     tag: ['@regression', '@smoke', '@heartbeat', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {

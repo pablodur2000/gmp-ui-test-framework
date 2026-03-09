@@ -19,7 +19,7 @@ import { waitForHoverEffect } from '../utils/wait-helpers';
  * 
  * Tags: @regression, @smoke, @navigation, @desktop, @development, @staging, @production
  */
-test.describe('Smoke Test - Critical Navigation Elements', () => {
+test.describe('Smoke Test - Critical Navigation Elements (QA-7)', () => {
   test('should have working navigation elements with dropdowns and hover states', {
     tag: ['@regression', '@smoke', '@navigation', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {

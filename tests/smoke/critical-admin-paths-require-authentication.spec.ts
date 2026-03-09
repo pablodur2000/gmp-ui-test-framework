@@ -20,7 +20,7 @@ import { trackRedirect } from '../utils/performance-tracker';
  * 
  * Tags: @regression, @smoke, @authentication, @admin, @desktop, @development, @staging
  */
-test.describe('Smoke Test - Critical Admin Paths', () => {
+test.describe('Smoke Test - Critical Admin Paths (QA-6)', () => {
   test('should load AdminLoginPage correctly with functional form', {
     tag: ['@regression', '@smoke', '@authentication', '@admin', '@desktop', '@development', '@staging'],
   }, async ({ page }) => {

@@ -104,6 +104,7 @@ export const TestSelectors = {
   catalogProductList: '[data-testid="catalog-product-list"]',
   catalogProductCard: (id: string | number) => `[data-testid="catalog-product-card-${id}"]`,
   catalogProductCount: '[data-testid="catalog-product-count"]',
+  catalogEmptyState: '[data-testid="catalog-empty-state"]',
   catalogViewToggle: '[data-testid="catalog-view-toggle"]',
   catalogViewToggleGrid: '[data-testid="catalog-view-toggle-grid"]',
   catalogViewToggleList: '[data-testid="catalog-view-toggle-list"]',
