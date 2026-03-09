@@ -6,6 +6,8 @@ import {
   monitorAndCheckConsoleErrors,
   extractProductCount,
   waitForCountUpdate,
+  waitForProductsApiCall,
+  verifyProductsApiResponse,
 } from '../../../utils';
 
 /**
@@ -45,7 +47,7 @@ test.describe('CatalogPage - Subcategory Filter Works Correctly (QA-24)', () => 
     // Monitor console errors
     await monitorAndCheckConsoleErrors(page, 1000);
 
-    // Wait for products to load
+    // Wait for products to load (initial load - keep this one)
     await page.waitForLoadState('networkidle');
 
     await expectPathname(page, '/catalogo');
@@ -97,13 +99,21 @@ test.describe('CatalogPage - Subcategory Filter Works Correctly (QA-24)', () => 
     if (await billeterasButton.count() > 0) {
       const countBeforeBilleteras = extractProductCount(await productCount.textContent() || '');
 
+      // Set up API call listener BEFORE clicking
+      const billeterasApiPromise = waitForProductsApiCall(page, { category: 'Billeteras' }, 10000);
+
       // Click Billeteras button
       await billeterasButton.click();
       
-      // Wait for filtering to complete
-      await page.waitForTimeout(150); // Wait for isFiltering delay
+      // Wait for filtering to complete (replaced waitForLoadState)
       await waitForCountUpdate(page, countBeforeBilleteras, 5000);
-      await page.waitForLoadState('networkidle');
+
+      // Verify API call was made
+      const billeterasApiResult = await billeterasApiPromise;
+      expect(billeterasApiResult.received).toBe(true);
+      expect(billeterasApiResult.status).toBe(200);
+      expect(verifyProductsApiResponse(billeterasApiResult)).toBe(true);
+      console.log('✅ Billeteras filter API call verified');
 
       // Verify Billeteras button is now active
       const billeterasButtonClasses = await billeterasButton.getAttribute('class');
@@ -143,13 +153,20 @@ test.describe('CatalogPage - Subcategory Filter Works Correctly (QA-24)', () => 
     if (await todasCategoriasButton.count() > 0) {
       const countBeforeReset = extractProductCount(await productCount.textContent() || '');
 
+      // Set up API call listener for reset (should load all products)
+      const resetApiPromise = waitForProductsApiCall(page, {}, 10000);
+
       // Click "Todas las categorías" button to reset
       await todasCategoriasButton.click();
       
-      // Wait for filtering to complete
-      await page.waitForTimeout(150); // Wait for isFiltering delay
+      // Wait for filtering to complete (replaced waitForLoadState)
       await waitForCountUpdate(page, countBeforeReset, 5000);
-      await page.waitForLoadState('networkidle');
+
+      // Verify API call was made
+      const resetApiResult = await resetApiPromise;
+      expect(resetApiResult.received).toBe(true);
+      expect(resetApiResult.status).toBe(200);
+      console.log('✅ Reset filter API call verified');
 
       // Verify "Todas las categorías" button is now active
       const todasCategoriasButtonClassesAfter2 = await todasCategoriasButton.getAttribute('class');
@@ -201,11 +218,17 @@ test.describe('CatalogPage - Subcategory Filter Works Correctly (QA-24)', () => 
       if (await subcategoryButton.count() > 0) {
         const countBeforeSubcategory = extractProductCount(await productCount.textContent() || '');
 
+        // Set up API call listener
+        const subcategoryApiPromise = waitForProductsApiCall(page, { category: subcategory }, 10000);
+
         // Click subcategory button
         await subcategoryButton.click();
-        await page.waitForTimeout(150);
         await waitForCountUpdate(page, countBeforeSubcategory, 5000);
-        await page.waitForLoadState('networkidle');
+
+        // Verify API call
+        const subcategoryApiResult = await subcategoryApiPromise;
+        expect(subcategoryApiResult.received).toBe(true);
+        expect(subcategoryApiResult.status).toBe(200);
 
         // Verify URL parameter was set
         const subcategoryUrl = new URL(page.url());
@@ -226,9 +249,9 @@ test.describe('CatalogPage - Subcategory Filter Works Correctly (QA-24)', () => 
 
         // Reset before testing next subcategory
         if (await todasCategoriasButton.count() > 0) {
+          const countBeforeReset = extractProductCount(await productCount.textContent() || '');
           await todasCategoriasButton.click();
-          await page.waitForTimeout(150);
-          await page.waitForLoadState('networkidle');
+          await waitForCountUpdate(page, countBeforeReset, 5000);
         }
       }
     }
@@ -251,30 +274,40 @@ test.describe('CatalogPage - Subcategory Filter Works Correctly (QA-24)', () => 
     if (await cueroButton.count() > 0 && await billeterasButton2.count() > 0) {
       // Reset all filters first
       if (await todasCategoriasButton.count() > 0) {
+        const countBeforeReset = extractProductCount(await productCount.textContent() || '');
         await todasCategoriasButton.click();
-        await page.waitForTimeout(150);
-        await page.waitForLoadState('networkidle');
+        await waitForCountUpdate(page, countBeforeReset, 5000);
       }
 
       const todasButton = catalogPage.locator(TestSelectors.catalogMainCategoryAll);
       if (await todasButton.count() > 0) {
+        const countBeforeTodas = extractProductCount(await productCount.textContent() || '');
         await todasButton.click();
-        await page.waitForTimeout(150);
-        await page.waitForLoadState('networkidle');
+        await waitForCountUpdate(page, countBeforeTodas, 5000);
       }
 
+      // Set up API call listener for combined filters
+      const combinedApiPromise = waitForProductsApiCall(page, { 
+        mainCategory: 'cuero',
+        category: 'Billeteras' 
+      }, 10000);
+
       // Apply Cuero filter
+      const countBeforeCuero = extractProductCount(await productCount.textContent() || '');
       await cueroButton.click();
-      await page.waitForTimeout(150);
-      await page.waitForLoadState('networkidle');
+      await waitForCountUpdate(page, countBeforeCuero, 5000);
 
       const cueroCount = extractProductCount(await productCount.textContent() || '');
 
       // Apply Billeteras subcategory filter
       await billeterasButton2.click();
-      await page.waitForTimeout(150);
       await waitForCountUpdate(page, cueroCount, 5000);
-      await page.waitForLoadState('networkidle');
+
+      // Verify combined filters API call
+      const combinedApiResult = await combinedApiPromise;
+      expect(combinedApiResult.received).toBe(true);
+      expect(combinedApiResult.status).toBe(200);
+      console.log('✅ Combined filters API call verified');
 
       // Verify both filters are active
       const cueroButtonClasses = await cueroButton.getAttribute('class');
@@ -313,25 +346,33 @@ test.describe('CatalogPage - Subcategory Filter Works Correctly (QA-24)', () => 
     if (await testSubcategoryButton.count() > 0) {
       // Reset first
       if (await todasCategoriasButton.count() > 0) {
+        const countBeforeReset = extractProductCount(await productCount.textContent() || '');
         await todasCategoriasButton.click();
-        await page.waitForTimeout(150);
-        await page.waitForLoadState('networkidle');
+        await waitForCountUpdate(page, countBeforeReset, 5000);
       }
 
+      // Set up API call listener
+      const persistenceApiPromise = waitForProductsApiCall(page, { category: 'Billeteras' }, 10000);
+
       // Apply filter
+      const countBeforeFilter = extractProductCount(await productCount.textContent() || '');
       await testSubcategoryButton.click();
-      await page.waitForTimeout(150);
-      await page.waitForLoadState('networkidle');
+      await waitForCountUpdate(page, countBeforeFilter, 5000);
+
+      // Verify API call
+      const persistenceApiResult = await persistenceApiPromise;
+      expect(persistenceApiResult.received).toBe(true);
+      expect(persistenceApiResult.status).toBe(200);
 
       // Capture URL with parameter
       const urlWithParam = page.url();
       expect(urlWithParam).toContain('categoria=Billeteras');
 
-      // Navigate away (to home)
+      // Navigate away (to home) - waitForLoadState is appropriate for navigation
       await page.goto(new URL(page.url()).origin + '/');
       await page.waitForLoadState('networkidle');
 
-      // Navigate back to catalog with URL parameter
+      // Navigate back to catalog with URL parameter - waitForLoadState is appropriate for navigation
       await page.goto(urlWithParam);
       await page.waitForLoadState('networkidle');
 

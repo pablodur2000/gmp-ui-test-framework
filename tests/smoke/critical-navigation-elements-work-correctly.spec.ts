@@ -30,7 +30,7 @@ test.describe('Smoke Test - Critical Navigation Elements (QA-7)', () => {
     // SETUP: Navigate to home page and wait for animations
     // ============================================================================
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
     
     // Wait for header to be visible and stable (after first visit animation)
     const header = page.locator(TestSelectors.header);
@@ -62,7 +62,7 @@ test.describe('Smoke Test - Critical Navigation Elements (QA-7)', () => {
     await expect(logo).toBeVisible();
 
     await logo.click();
-    await page.waitForLoadState('networkidle'); // Wait for navigation
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 }); // Wait for navigation
     
     // Check home URL - extract pathname and verify it's the home path
     const url = new URL(page.url());
@@ -105,7 +105,7 @@ test.describe('Smoke Test - Critical Navigation Elements (QA-7)', () => {
     await expect(catalogLink).toBeVisible();
 
     await homeLink.click();
-    await page.waitForLoadState('networkidle'); // Wait for navigation
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 }); // Wait for navigation
     
     // Check home URL - extract pathname and verify it's the home path
     const urlAfterHomeClick = new URL(page.url());
@@ -128,13 +128,13 @@ test.describe('Smoke Test - Critical Navigation Elements (QA-7)', () => {
 
     await catalogLinkAfterClick.click();
     await expectPathname(page, '/catalogo');
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/catalogo/, { timeout: 10000 });
 
     // ============================================================================
     // SECTION 3: Verify Hover States
     // ============================================================================
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
     
     // Re-scope links after navigation
     const headerForHover = page.locator(TestSelectors.header);
@@ -220,7 +220,7 @@ test.describe('Smoke Test - Critical Navigation Elements (QA-7)', () => {
     // SECTION 5: Verify Smooth Scroll to Anchor
     // ============================================================================
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
     await page.evaluate(() => (globalThis as any).window?.scrollTo(0, 0));
     
     // Wait for scroll to complete
@@ -248,7 +248,7 @@ test.describe('Smoke Test - Critical Navigation Elements (QA-7)', () => {
     // SECTION 6: Verify Header CTA Button
     // ============================================================================
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
 
     // Note: Header CTA button may not have data-testid yet - using role selector only
     const headerCtaButton = page.getByRole('button', { name: /ver catálogo/i });
@@ -264,7 +264,7 @@ test.describe('Smoke Test - Critical Navigation Elements (QA-7)', () => {
     // SECTION 7: Verify Sticky Header Behavior
     // ============================================================================
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
     
     const headerForSticky = page.locator(TestSelectors.header);
     const initialHeaderPosition = await headerForSticky.boundingBox();

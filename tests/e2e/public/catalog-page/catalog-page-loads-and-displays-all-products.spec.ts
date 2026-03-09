@@ -4,7 +4,8 @@ import { TestSelectors } from '../../../utils/selectors';
 import {
   trackPageLoad,
   monitorAndCheckConsoleErrors,
-  setupSupabaseListener,
+  waitForProductsApiCall,
+  verifyProductsApiResponse,
   verifyImagesLoad,
   waitForElementInViewport,
   waitForScrollToComplete
@@ -33,6 +34,9 @@ test.describe('CatalogPage - Loads and Displays All Products (QA-21)', () => {
     // ============================================================================
     // SETUP: Navigate to catalog page and track performance
     // ============================================================================
+    // Set up API listener BEFORE navigation (for page load API calls)
+    const apiPromise = waitForProductsApiCall(page, {}, 10000);
+    
     const pageLoadTime = await trackPageLoad(
       page,
       async () => await navigateToCatalog(page),
@@ -114,27 +118,16 @@ test.describe('CatalogPage - Loads and Displays All Products (QA-21)', () => {
     // ============================================================================
     // SECTION 5: Verify Supabase API Call
     // ============================================================================
-    // Set up API listener BEFORE any action that might trigger API call
-    const apiResponse = await setupSupabaseListener(
-      page,
-      {
-        endpoint: 'products',
-        queryParams: { available: 'eq.true' }
-      },
-      5000 // timeout
-    );
-
-    // Wait for products to load
-    await page.waitForLoadState('networkidle');
+    // Wait for products API call (already set up before navigation)
+    const apiResult = await apiPromise;
 
     // Verify API response
-    if (apiResponse.received) {
-      expect(apiResponse.status).toBe(200);
-      if (apiResponse.data && Array.isArray(apiResponse.data)) {
-        console.log(`✅ Supabase API verified: ${apiResponse.data.length} products`);
-      }
-    } else {
-      console.log('ℹ️ Supabase API call not captured (may have loaded before listener setup)');
+    expect(apiResult.received).toBe(true);
+    expect(apiResult.status).toBe(200);
+    expect(verifyProductsApiResponse(apiResult)).toBe(true);
+    
+    if (Array.isArray(apiResult.data)) {
+      console.log(`✅ Supabase API verified: ${apiResult.data.length} products`);
     }
 
     // ============================================================================

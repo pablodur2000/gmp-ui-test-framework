@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { navigateToHome } from '../../../utils/navigation';
 import { TestSelectors } from '../../../utils/selectors';
-import { trackPageLoad, monitorAndCheckConsoleErrors } from '../../../utils';
-import { setupSupabaseListener } from '../../../utils/api-listener';
+import { trackPageLoad, monitorAndCheckConsoleErrors, waitForProductsApiCall, verifyProductsApiResponse } from '../../../utils';
 import { waitForElementInViewport, verifyImagesLoad, waitForFirstVisitAnimation } from '../../../utils';
 
 /**
@@ -29,6 +28,9 @@ test.describe('HomePage - Loads and Displays Correctly (QA-8)', () => {
     // ============================================================================
     // SETUP: Navigate to home page and track performance
     // ============================================================================
+    // Set up API listener BEFORE navigation (for page load API calls)
+    const featuredApiPromise = waitForProductsApiCall(page, {}, 10000);
+    
     const pageLoadTime = await trackPageLoad(
       page,
       async () => await navigateToHome(page),
@@ -117,12 +119,6 @@ test.describe('HomePage - Loads and Displays Correctly (QA-8)', () => {
     // ============================================================================
     // SECTION 4: Featured Products Section with Supabase Data
     // ============================================================================
-    // Set up response listener BEFORE scrolling to section
-    const supabaseResponse = setupSupabaseListener(page, {
-      endpoint: 'products',
-      queryParams: { featured: 'eq.true' }
-    }, 5000);
-
     const featuredSection = page.locator(TestSelectors.homeFeaturedProducts);
     await waitForElementInViewport(page, TestSelectors.homeFeaturedProducts);
 
@@ -133,13 +129,14 @@ test.describe('HomePage - Loads and Displays Correctly (QA-8)', () => {
       await expect(heading).toBeVisible();
 
       // Wait for API response
-      const response = await supabaseResponse;
+      const apiResult = await featuredApiPromise;
       
-      if (response.received) {
-        expect(response.status).toBe(200);
-        if (response.data && Array.isArray(response.data)) {
-          console.log(`✅ Supabase API verified: ${response.data.length} featured products`);
-        }
+      expect(apiResult.received).toBe(true);
+      expect(apiResult.status).toBe(200);
+      expect(verifyProductsApiResponse(apiResult)).toBe(true);
+      
+      if (Array.isArray(apiResult.data)) {
+        console.log(`✅ Supabase API verified: ${apiResult.data.length} featured products`);
       }
 
       const productCards = page.locator('[data-testid^="home-featured-product-card"]');

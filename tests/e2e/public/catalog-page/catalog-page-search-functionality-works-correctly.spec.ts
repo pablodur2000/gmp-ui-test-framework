@@ -6,6 +6,11 @@ import {
   monitorAndCheckConsoleErrors,
   extractProductCount,
   waitForCountUpdate,
+  waitForSearchComplete,
+  waitForSearchApiCall,
+  waitForProductsApiCall,
+  verifyProductContentMatchesSearch,
+  verifyProductsApiResponse,
 } from '../../../utils';
 
 /**
@@ -87,19 +92,38 @@ test.describe('CatalogPage - Search Functionality Works Correctly (QA-26)', () =
     // ============================================================================
     console.log('📋 Section 2: Testing basic search');
 
+    // Set up API call listener BEFORE filling search
+    const searchApiPromise = waitForSearchApiCall(page, 'billetera', 10000);
+
     // Type search term
     await searchInput.fill('billetera');
-    
-    // Wait for debounce (500ms) + search completion
-    await page.waitForLoadState('networkidle', { timeout: 5000 });
 
     // Verify search term is in input
     const searchValue = await searchInput.inputValue();
     expect(searchValue).toBe('billetera');
 
-    // Wait for product count to update
-    await waitForCountUpdate(page, TestSelectors.catalogProductCount, initialCountText || '', 5000);
+    // Wait for search to complete (debounce + API call + count update)
+    await waitForSearchComplete(page, initialCount, 7000);
 
+    // Verify API call was made with correct parameters
+    const searchApiResult = await searchApiPromise;
+    expect(searchApiResult.received).toBe(true);
+    expect(searchApiResult.status).toBe(200);
+    expect(searchApiResult.url).toContain('/rest/v1/products');
+    
+    // Verify API response structure
+    const apiResponseValid = verifyProductsApiResponse(searchApiResult);
+    expect(apiResponseValid).toBe(true);
+
+    // Verify search term in API call (should be in ilike query)
+    const searchInApi = searchApiResult.url.toLowerCase().includes('billetera') ||
+                       JSON.stringify(searchApiResult.queryParams).toLowerCase().includes('billetera') ||
+                       JSON.stringify(searchApiResult.data || '').toLowerCase().includes('billetera');
+    expect(searchInApi).toBe(true);
+
+    console.log('✅ Search API call verified');
+
+    // Get updated product count
     const searchCountText = await productCount.textContent();
     const searchCount = extractProductCount(searchCountText || '');
 
@@ -109,8 +133,13 @@ test.describe('CatalogPage - Search Functionality Works Correctly (QA-26)', () =
     // Verify products are displayed (if any match)
     if (searchCount > 0) {
       const cardCount = await productCards.count();
-      expect(cardCount).toBeGreaterThan(0);
-      console.log(`✅ Search found ${searchCount} products for "billetera"`);
+      expect(cardCount).toBe(searchCount); // Verify count matches cards
+      
+      // ✅ NEW: Verify product content actually matches search term
+      const contentMatches = await verifyProductContentMatchesSearch(page, 'billetera', 3);
+      expect(contentMatches).toBe(true);
+      
+      console.log(`✅ Search found ${searchCount} products for "billetera" and verified content matches`);
     } else {
       // Verify empty state is displayed
       const emptyState = page.locator(TestSelectors.catalogEmptyState);
@@ -129,13 +158,21 @@ test.describe('CatalogPage - Search Functionality Works Correctly (QA-26)', () =
     await searchInput.fill('');
     await page.waitForLoadState('networkidle', { timeout: 5000 });
 
+    // Set up API call listener BEFORE typing
+    const debounceApiPromise = waitForSearchApiCall(page, 'bil', 10000);
+
     // Type characters quickly (should only trigger one search after debounce)
     await searchInput.type('b', { delay: 50 });
     await searchInput.type('i', { delay: 50 });
     await searchInput.type('l', { delay: 50 });
     
     // Wait for debounce (500ms) + search completion
-    await page.waitForLoadState('networkidle', { timeout: 5000 });
+    await waitForSearchComplete(page, extractProductCount(await productCount.textContent() || ''), 7000);
+    
+    // Verify API call was made (should be only one after debounce)
+    const debounceApiResult = await debounceApiPromise;
+    expect(debounceApiResult.received).toBe(true);
+    expect(debounceApiResult.status).toBe(200);
 
     const debounceSearchValue = await searchInput.inputValue();
     expect(debounceSearchValue).toBe('bil');
@@ -149,17 +186,36 @@ test.describe('CatalogPage - Search Functionality Works Correctly (QA-26)', () =
 
     // Clear search first
     await searchInput.fill('');
-    await page.waitForTimeout(600);
-    await page.waitForLoadState('networkidle');
+    await waitForSearchComplete(page, extractProductCount(await productCount.textContent() || ''), 7000);
 
     // Apply main category filter
     const cueroButton = catalogPage.locator(TestSelectors.catalogMainCategoryCuero);
+    
+    // Get count before filter
+    const countBeforeCategory = extractProductCount(await productCount.textContent() || '');
+    
+    // Set up API call listener for category filter
+    const categoryApiPromise = waitForProductsApiCall(page, { mainCategory: 'cuero' }, 10000);
+    
     await cueroButton.click();
-    await page.waitForLoadState('networkidle', { timeout: 5000 });
+    await waitForCountUpdate(page, countBeforeCategory, 5000);
+    
+    // Verify category API call
+    const categoryApiResult = await categoryApiPromise;
+    expect(categoryApiResult.received).toBe(true);
+    expect(categoryApiResult.status).toBe(200);
+
+    // Set up API call listener for search with category
+    const searchWithCategoryApiPromise = waitForSearchApiCall(page, 'billetera', 10000);
 
     // Type search term
     await searchInput.fill('billetera');
-    await page.waitForLoadState('networkidle', { timeout: 5000 });
+    await waitForSearchComplete(page, extractProductCount(await productCount.textContent() || ''), 7000);
+    
+    // Verify search API call with category filter
+    const searchWithCategoryApiResult = await searchWithCategoryApiPromise;
+    expect(searchWithCategoryApiResult.received).toBe(true);
+    expect(searchWithCategoryApiResult.status).toBe(200);
 
     // Verify both filters are active
     const cueroButtonClasses = await cueroButton.getAttribute('class');
@@ -182,14 +238,15 @@ test.describe('CatalogPage - Search Functionality Works Correctly (QA-26)', () =
 
     // Clear search input
     await searchInput.fill('');
-    await page.waitForLoadState('networkidle', { timeout: 5000 });
+    await waitForSearchComplete(page, extractProductCount(await productCount.textContent() || ''), 7000);
 
     // Verify search input is empty
     const clearedSearchValue = await searchInput.inputValue();
     expect(clearedSearchValue).toBe('');
 
     // Wait for product count to update (should return to category-filtered count)
-    await waitForCountUpdate(page, TestSelectors.catalogProductCount, combinedCountText || '', 5000);
+    const countBeforeClear = extractProductCount(combinedCountText || '');
+    await waitForCountUpdate(page, countBeforeClear, 5000);
 
     const clearedCountText = await productCount.textContent();
     const clearedCount = extractProductCount(clearedCountText || '');
@@ -204,9 +261,17 @@ test.describe('CatalogPage - Search Functionality Works Correctly (QA-26)', () =
     // ============================================================================
     console.log('📋 Section 6: Testing search with no results');
 
+    // Set up API call listener for no-results search
+    const noResultsApiPromise = waitForSearchApiCall(page, 'xyz123nonexistent', 10000);
+
     // Type search term that likely doesn't match
     await searchInput.fill('xyz123nonexistent');
-    await page.waitForLoadState('networkidle', { timeout: 5000 });
+    await waitForSearchComplete(page, extractProductCount(await productCount.textContent() || ''), 7000);
+    
+    // Verify API call was made
+    const noResultsApiResult = await noResultsApiPromise;
+    expect(noResultsApiResult.received).toBe(true);
+    expect(noResultsApiResult.status).toBe(200);
 
     // Verify empty state is displayed
     const emptyStateNoResults = page.locator(TestSelectors.catalogEmptyState);
@@ -229,7 +294,10 @@ test.describe('CatalogPage - Search Functionality Works Correctly (QA-26)', () =
 
     // Clear search
     await searchInput.fill('');
-    await page.waitForLoadState('networkidle', { timeout: 5000 });
+    await waitForSearchComplete(page, extractProductCount(await productCount.textContent() || ''), 7000);
+
+    // Set up API call listener
+    const loadingApiPromise = waitForSearchApiCall(page, 'billetera', 10000);
 
     // Type search term and check for loading spinner
     await searchInput.fill('billetera');
@@ -247,7 +315,12 @@ test.describe('CatalogPage - Search Functionality Works Correctly (QA-26)', () =
     }
 
     // Wait for search to complete
-    await page.waitForLoadState('networkidle', { timeout: 5000 });
+    await waitForSearchComplete(page, extractProductCount(await productCount.textContent() || ''), 7000);
+    
+    // Verify API call completed
+    const loadingApiResult = await loadingApiPromise;
+    expect(loadingApiResult.received).toBe(true);
+    expect(loadingApiResult.status).toBe(200);
 
     console.log('✅ Search loading state verified');
 

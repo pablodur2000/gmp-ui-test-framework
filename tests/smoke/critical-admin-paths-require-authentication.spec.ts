@@ -28,7 +28,7 @@ test.describe('Smoke Test - Critical Admin Paths (QA-6)', () => {
     // SETUP: Navigate to admin login page
     // ============================================================================
     await navigateToAdminLogin(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/admin\/login/, { timeout: 10000 });
 
     // ============================================================================
     // SECTION 1: Page Load and Basic Elements
@@ -146,7 +146,7 @@ test.describe('Smoke Test - Critical Admin Paths (QA-6)', () => {
     // ============================================================================
     // Navigate to a page first to have a valid context for clearing storage
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
     
     // Clear cookies and storage
     await page.context().clearCookies();

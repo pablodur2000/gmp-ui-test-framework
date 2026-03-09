@@ -224,15 +224,15 @@ test.describe('HomePage - Hero Section (QA-9)', () => {
     await expectPathname(page, '/catalogo');
 
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
 
     // ============================================================================
     // SECTION 6: Subsequent Visit Behavior
     // ============================================================================
     await navigateToCatalog(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/catalogo/, { timeout: 10000 });
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
 
     await expect(heroSection).toBeVisible();
     await expect(title).toBeVisible({ timeout: 2000 });

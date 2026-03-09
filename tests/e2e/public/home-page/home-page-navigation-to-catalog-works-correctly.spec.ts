@@ -27,7 +27,7 @@ test.describe('HomePage - Navigation to Catalog (QA-10)', () => {
     // SETUP: Navigate to home page
     // ============================================================================
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
     await waitForFirstVisitAnimation(page, 3000);
 
     // ============================================================================
@@ -79,13 +79,13 @@ test.describe('HomePage - Navigation to Catalog (QA-10)', () => {
     console.log('✅ Hero CTA button navigation works');
 
     await page.goBack();
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
 
     // ============================================================================
     // SECTION 2: Test CTA Section Button
     // ============================================================================
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
 
     const ctaSection = page.locator(TestSelectors.homeCtaSection);
     await waitForElementInViewport(page, TestSelectors.homeCtaSection);
@@ -121,13 +121,13 @@ test.describe('HomePage - Navigation to Catalog (QA-10)', () => {
     console.log('✅ CTA section button navigation works');
 
     await page.goBack();
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
 
     // ============================================================================
     // SECTION 3: Test Header CTA Button
     // ============================================================================
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
 
     // Note: Header CTA button may not have data-testid yet - using role selector only
     const headerCtaButton = page.getByRole('button', { name: /ver catálogo/i });
@@ -151,7 +151,7 @@ test.describe('HomePage - Navigation to Catalog (QA-10)', () => {
       // SECTION 4: Test Navigation from Different States
       // ============================================================================
       await navigateToHome(page);
-      await page.waitForLoadState('networkidle');
+      await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
 
       await page.evaluate(() => {
         (globalThis as any).window?.scrollTo(0, 1000);
@@ -172,7 +172,7 @@ test.describe('HomePage - Navigation to Catalog (QA-10)', () => {
     // SECTION 5: Test Browser History
     // ============================================================================
     await navigateToHome(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
 
     const heroCtaButtonForHistory = page.locator(TestSelectors.homeHeroCtaButton);
     await expect(heroCtaButtonForHistory).toBeVisible();
@@ -180,7 +180,7 @@ test.describe('HomePage - Navigation to Catalog (QA-10)', () => {
     await page.waitForURL((url) => new URL(url).pathname.endsWith('/catalogo'), { timeout: 5000 });
 
     await page.goBack();
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/$|\/gmp-web-app\/?$/, { timeout: 10000 });
 
     // Check home URL - extract pathname and verify it's the home path
     const url = new URL(page.url());

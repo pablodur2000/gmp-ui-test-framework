@@ -47,6 +47,16 @@ export {
 } from './api-listener';
 export type { ApiListenerFilters, ApiResponse } from './api-listener';
 
+// API Verification (Enhanced)
+export {
+  waitForProductsApiCall,
+  waitForSearchApiCall,
+  waitForCategoriesApiCall,
+  verifyProductContentMatchesSearch,
+  verifyProductsApiResponse,
+} from './api-verification';
+export type { ApiVerificationResult, ProductsApiFilters } from './api-verification';
+
 // Image Verification
 export {
   verifyImagesLoad,

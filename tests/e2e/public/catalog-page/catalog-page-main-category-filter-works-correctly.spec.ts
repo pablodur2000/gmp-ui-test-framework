@@ -6,6 +6,8 @@ import {
   monitorAndCheckConsoleErrors,
   extractProductCount,
   waitForCountUpdate,
+  waitForProductsApiCall,
+  verifyProductsApiResponse,
 } from '../../../utils';
 
 /**
@@ -98,13 +100,21 @@ test.describe('CatalogPage - Main Category Filter Works Correctly (QA-23)', () =
     console.log('📋 Section 2: Testing Cuero filter');
 
     if (await cueroButton.count() > 0) {
+      // Set up API call listener BEFORE clicking
+      const cueroApiPromise = waitForProductsApiCall(page, { mainCategory: 'cuero' }, 10000);
+
       // Click Cuero button
       await cueroButton.click();
       
-      // Wait for filtering to complete (isFiltering delay + network request)
-      await page.waitForTimeout(150); // Wait for isFiltering delay
+      // Wait for filtering to complete (replaced waitForLoadState)
       await waitForCountUpdate(page, initialCount, 5000);
-      await page.waitForLoadState('networkidle');
+
+      // Verify API call was made
+      const cueroApiResult = await cueroApiPromise;
+      expect(cueroApiResult.received).toBe(true);
+      expect(cueroApiResult.status).toBe(200);
+      expect(verifyProductsApiResponse(cueroApiResult)).toBe(true);
+      console.log('✅ Cuero filter API call verified');
 
       // Verify Cuero button is now active
       const cueroButtonClassesAfter = await cueroButton.getAttribute('class');
@@ -142,13 +152,21 @@ test.describe('CatalogPage - Main Category Filter Works Correctly (QA-23)', () =
       // Get count before switching
       const countBeforeMacrame = extractProductCount(await productCount.textContent() || '');
 
+      // Set up API call listener BEFORE clicking
+      const macrameApiPromise = waitForProductsApiCall(page, { mainCategory: 'macrame' }, 10000);
+
       // Click Macramé button
       await macrameButton.click();
       
-      // Wait for filtering to complete
-      await page.waitForTimeout(150); // Wait for isFiltering delay
+      // Wait for filtering to complete (replaced waitForLoadState)
       await waitForCountUpdate(page, countBeforeMacrame, 5000);
-      await page.waitForLoadState('networkidle');
+
+      // Verify API call was made
+      const macrameApiResult = await macrameApiPromise;
+      expect(macrameApiResult.received).toBe(true);
+      expect(macrameApiResult.status).toBe(200);
+      expect(verifyProductsApiResponse(macrameApiResult)).toBe(true);
+      console.log('✅ Macramé filter API call verified');
 
       // Verify Macramé button is now active
       const macrameButtonClassesAfter = await macrameButton.getAttribute('class');
@@ -186,13 +204,20 @@ test.describe('CatalogPage - Main Category Filter Works Correctly (QA-23)', () =
       // Get count before resetting
       const countBeforeReset = extractProductCount(await productCount.textContent() || '');
 
+      // Set up API call listener for reset (should load all products)
+      const resetApiPromise = waitForProductsApiCall(page, {}, 10000);
+
       // Click Todas button to reset
       await todasButton.click();
       
-      // Wait for filtering to complete
-      await page.waitForTimeout(150); // Wait for isFiltering delay
+      // Wait for filtering to complete (replaced waitForLoadState)
       await waitForCountUpdate(page, countBeforeReset, 5000);
-      await page.waitForLoadState('networkidle');
+
+      // Verify API call was made
+      const resetApiResult = await resetApiPromise;
+      expect(resetApiResult.received).toBe(true);
+      expect(resetApiResult.status).toBe(200);
+      console.log('✅ Reset filter API call verified');
 
       // Verify Todas button is now active
       const todasButtonClassesAfter3 = await todasButton.getAttribute('class');
@@ -226,9 +251,15 @@ test.describe('CatalogPage - Main Category Filter Works Correctly (QA-23)', () =
 
     // Switch to Cuero
     if (await cueroButton.count() > 0) {
+      const countBeforeCueroSwitch = extractProductCount(await productCount.textContent() || '');
+      const cueroSwitchApiPromise = waitForProductsApiCall(page, { mainCategory: 'cuero' }, 10000);
+
       await cueroButton.click();
-      await page.waitForTimeout(150);
-      await page.waitForLoadState('networkidle');
+      await waitForCountUpdate(page, countBeforeCueroSwitch, 5000);
+      
+      const cueroApiResult = await cueroSwitchApiPromise;
+      expect(cueroApiResult.received).toBe(true);
+      expect(cueroApiResult.status).toBe(200);
       
       const cueroCountAfterSwitch = extractProductCount(await productCount.textContent() || '');
       expect(cueroCountAfterSwitch).toBeGreaterThanOrEqual(0);
@@ -240,9 +271,15 @@ test.describe('CatalogPage - Main Category Filter Works Correctly (QA-23)', () =
 
     // Switch to Macramé
     if (await macrameButton.count() > 0) {
+      const countBeforeMacrameSwitch = extractProductCount(await productCount.textContent() || '');
+      const macrameSwitchApiPromise = waitForProductsApiCall(page, { mainCategory: 'macrame' }, 10000);
+
       await macrameButton.click();
-      await page.waitForTimeout(150);
-      await page.waitForLoadState('networkidle');
+      await waitForCountUpdate(page, countBeforeMacrameSwitch, 5000);
+      
+      const macrameApiResult = await macrameSwitchApiPromise;
+      expect(macrameApiResult.received).toBe(true);
+      expect(macrameApiResult.status).toBe(200);
       
       const macrameCountAfterSwitch = extractProductCount(await productCount.textContent() || '');
       expect(macrameCountAfterSwitch).toBeGreaterThanOrEqual(0);
@@ -258,9 +295,15 @@ test.describe('CatalogPage - Main Category Filter Works Correctly (QA-23)', () =
 
     // Switch back to Todas
     if (await todasButton.count() > 0) {
+      const countBeforeTodasSwitch = extractProductCount(await productCount.textContent() || '');
+      const todasSwitchApiPromise = waitForProductsApiCall(page, {}, 10000);
+
       await todasButton.click();
-      await page.waitForTimeout(150);
-      await page.waitForLoadState('networkidle');
+      await waitForCountUpdate(page, countBeforeTodasSwitch, 5000);
+      
+      const todasApiResult = await todasSwitchApiPromise;
+      expect(todasApiResult.received).toBe(true);
+      expect(todasApiResult.status).toBe(200);
       
       const todasCountAfterSwitch = extractProductCount(await productCount.textContent() || '');
       expect(todasCountAfterSwitch).toBe(initialCount);
@@ -280,9 +323,9 @@ test.describe('CatalogPage - Main Category Filter Works Correctly (QA-23)', () =
     // Main category filter is state-only, not URL-based
     // Test with Cuero filter active
     if (await cueroButton.count() > 0) {
+      const countBeforeUrlTest = extractProductCount(await productCount.textContent() || '');
       await cueroButton.click();
-      await page.waitForTimeout(150);
-      await page.waitForLoadState('networkidle');
+      await waitForCountUpdate(page, countBeforeUrlTest, 5000);
 
       // Verify URL does NOT have tipo parameter
       const url = new URL(page.url());

@@ -6,6 +6,8 @@ import {
   monitorAndCheckConsoleErrors,
   extractProductCount,
   waitForCountUpdate,
+  waitForProductsApiCall,
+  verifyProductsApiResponse,
 } from '../../../utils';
 
 /**
@@ -102,8 +104,10 @@ test.describe('CatalogPage - Inventory Status Filter Works Correctly (QA-25)', (
     // ============================================================================
     console.log('📋 Section 2: Testing single checkbox - En Stock');
 
+    // Set up API call listener BEFORE checking checkbox
+    const inventoryApiPromise = waitForProductsApiCall(page, { inventoryStatus: 'en_stock' }, 10000);
+
     await enStockCheckbox.check();
-    await page.waitForLoadState('networkidle');
 
     // Verify checkbox is checked
     await expect(enStockCheckbox).toBeChecked({ timeout: 3000 });
@@ -111,8 +115,15 @@ test.describe('CatalogPage - Inventory Status Filter Works Correctly (QA-25)', (
     // Verify "Limpiar" button is visible
     await expect(clearButton).toBeVisible();
 
-    // Wait for product count to update
-    await waitForCountUpdate(page, TestSelectors.catalogProductCount, initialCountText || '', 5000);
+    // Wait for product count to update (replaced waitForLoadState)
+    await waitForCountUpdate(page, initialCount, 5000);
+
+    // Verify API call was made
+    const inventoryApiResult = await inventoryApiPromise;
+    expect(inventoryApiResult.received).toBe(true);
+    expect(inventoryApiResult.status).toBe(200);
+    expect(verifyProductsApiResponse(inventoryApiResult)).toBe(true);
+    console.log('✅ Inventory filter API call verified');
 
     const filteredCountText = await productCount.textContent();
     const filteredCount = extractProductCount(filteredCountText || '');
@@ -124,15 +135,25 @@ test.describe('CatalogPage - Inventory Status Filter Works Correctly (QA-25)', (
     // ============================================================================
     console.log('📋 Section 3: Testing multiple checkboxes (OR logic)');
 
+    // Set up API call listener for multiple inventory filters
+    const multipleInventoryApiPromise = waitForProductsApiCall(page, { 
+      inventoryStatus: ['en_stock', 'pieza_unica'] 
+    }, 10000);
+
     await piezaUnicaCheckbox.check();
-    await page.waitForLoadState('networkidle');
 
     // Verify both checkboxes are checked
     await expect(enStockCheckbox).toBeChecked({ timeout: 3000 });
     await expect(piezaUnicaCheckbox).toBeChecked({ timeout: 3000 });
 
-    // Wait for product count to update
-    await waitForCountUpdate(page, TestSelectors.catalogProductCount, filteredCountText || '', 5000);
+    // Wait for product count to update (replaced waitForLoadState)
+    await waitForCountUpdate(page, filteredCount, 5000);
+
+    // Verify API call was made with multiple filters
+    const multipleInventoryApiResult = await multipleInventoryApiPromise;
+    expect(multipleInventoryApiResult.received).toBe(true);
+    expect(multipleInventoryApiResult.status).toBe(200);
+    console.log('✅ Multiple inventory filters API call verified');
 
     const multipleFilterCountText = await productCount.textContent();
     const multipleFilterCount = extractProductCount(multipleFilterCountText || '');
@@ -147,8 +168,10 @@ test.describe('CatalogPage - Inventory Status Filter Works Correctly (QA-25)', (
     // ============================================================================
     console.log('📋 Section 4: Testing Limpiar button');
 
+    // Set up API call listener for clearing filters (should load all products)
+    const clearApiPromise = waitForProductsApiCall(page, {}, 10000);
+
     await clearButton.click();
-    await page.waitForLoadState('networkidle');
 
     // Verify all checkboxes are unchecked
     await expect(piezaUnicaCheckbox).not.toBeChecked();
@@ -160,8 +183,14 @@ test.describe('CatalogPage - Inventory Status Filter Works Correctly (QA-25)', (
     // Verify "Limpiar" button is NOT visible
     await expect(clearButton).not.toBeVisible();
 
-    // Wait for product count to return to initial
-    await waitForCountUpdate(page, TestSelectors.catalogProductCount, multipleFilterCountText || '', 5000);
+    // Wait for product count to return to initial (replaced waitForLoadState)
+    await waitForCountUpdate(page, multipleFilterCount, 5000);
+
+    // Verify API call was made (should load all products)
+    const clearApiResult = await clearApiPromise;
+    expect(clearApiResult.received).toBe(true);
+    expect(clearApiResult.status).toBe(200);
+    console.log('✅ Clear filters API call verified');
 
     const clearedCountText = await productCount.textContent();
     const clearedCount = extractProductCount(clearedCountText || '');
@@ -176,23 +205,39 @@ test.describe('CatalogPage - Inventory Status Filter Works Correctly (QA-25)', (
     // ============================================================================
     console.log('📋 Section 5: Testing filter combination with main category');
 
+    // Set up API call listener for inventory filter
+    const inventoryFilterApiPromise = waitForProductsApiCall(page, { inventoryStatus: 'en_stock' }, 10000);
+
     // Apply inventory filter
     await enStockCheckbox.check();
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(500);
+    await waitForCountUpdate(page, clearedCount, 5000);
+
+    // Verify API call was made
+    const inventoryFilterApiResult = await inventoryFilterApiPromise;
+    expect(inventoryFilterApiResult.received).toBe(true);
+    expect(inventoryFilterApiResult.status).toBe(200);
+
+    // Set up API call listener for combined filters
+    const combinedApiPromise = waitForProductsApiCall(page, { 
+      mainCategory: 'cuero',
+      inventoryStatus: 'en_stock' 
+    }, 10000);
 
     // Apply main category filter
     const cueroButton = catalogPage.locator(TestSelectors.catalogMainCategoryCuero);
     await cueroButton.click();
-    await page.waitForLoadState('networkidle');
+    await waitForCountUpdate(page, extractProductCount(await productCount.textContent() || ''), 5000);
+
+    // Verify combined filters API call
+    const combinedApiResult = await combinedApiPromise;
+    expect(combinedApiResult.received).toBe(true);
+    expect(combinedApiResult.status).toBe(200);
+    console.log('✅ Combined filters API call verified');
 
     // Verify both filters are active
     await expect(enStockCheckbox).toBeChecked();
     const cueroButtonClasses = await cueroButton.getAttribute('class');
     expect(cueroButtonClasses).toContain('bg-leather-600');
-
-    // Wait for product count to update
-    await waitForCountUpdate(page, TestSelectors.catalogProductCount, clearedCountText || '', 5000);
 
     const combinedCountText = await productCount.textContent();
     const combinedCount = extractProductCount(combinedCountText || '');
@@ -204,9 +249,17 @@ test.describe('CatalogPage - Inventory Status Filter Works Correctly (QA-25)', (
     // ============================================================================
     console.log('📋 Section 6: Testing uncheck individual checkbox');
 
+    // Set up API call listener for unchecking filter
+    const uncheckApiPromise = waitForProductsApiCall(page, { mainCategory: 'cuero' }, 10000);
+
     // Uncheck "En Stock" while keeping other filters
     await enStockCheckbox.uncheck();
-    await page.waitForLoadState('networkidle');
+    await waitForCountUpdate(page, extractProductCount(await productCount.textContent() || ''), 5000);
+
+    // Verify API call was made (should remove inventory filter)
+    const uncheckApiResult = await uncheckApiPromise;
+    expect(uncheckApiResult.received).toBe(true);
+    expect(uncheckApiResult.status).toBe(200);
 
     // Wait for checkbox state to update
     await expect(enStockCheckbox).not.toBeChecked({ timeout: 3000 });
