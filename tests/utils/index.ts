@@ -78,3 +78,14 @@ export {
   waitForCountUpdate,
   waitForSearchComplete,
 } from './catalog-helpers';
+
+// Supabase Cleanup
+export {
+  cleanupTestProduct,
+  cleanupTestCategory,
+  cleanupTestSale,
+  cleanupTestActivityLog,
+  cleanupTestProducts,
+  TestCleanupTracker,
+  type CleanupResult,
+} from './supabase-cleanup';
