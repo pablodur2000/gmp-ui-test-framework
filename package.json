@@ -42,6 +42,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.99.0",
     "dotenv": "^17.2.3",
     "marklassian": "^1.0.0",
     "node-fetch": "^3.3.2"
