@@ -45,6 +45,12 @@ jobs:
         env:
           # Schedule → develop. Manual → chosen env (develop = Pages, production = Vercel)
           BASE_URL: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production') && 'https://gmp-web-app.vercel.app' || 'https://pablodur2000.github.io/gmp-web-app' }}
+          # Admin credentials for admin tests
+          TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL }}
+          TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD }}
+          # Non-admin credentials for access denied test
+          TEST_NON_ADMIN_EMAIL: ${{ secrets.TEST_NON_ADMIN_EMAIL }}
+          TEST_NON_ADMIN_PASSWORD: ${{ secrets.TEST_NON_ADMIN_PASSWORD }}
         run: npx playwright test --project=chromium --grep "@regression"
 
       - name: Upload Playwright report
