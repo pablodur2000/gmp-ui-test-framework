@@ -51,6 +51,14 @@ jobs:
           # Non-admin credentials for access denied test
           TEST_NON_ADMIN_EMAIL: ${{ secrets.TEST_NON_ADMIN_EMAIL }}
           TEST_NON_ADMIN_PASSWORD: ${{ secrets.TEST_NON_ADMIN_PASSWORD }}
+          # Supabase credentials for test data creation/cleanup (development environment)
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL_DEV: ${{ secrets.VITE_SUPABASE_URL_DEV }}
+          VITE_SUPABASE_ANON_KEY_DEV: ${{ secrets.VITE_SUPABASE_ANON_KEY_DEV }}
+          # Production Supabase credentials (if testing production)
+          VITE_SUPABASE_URL_PROD: ${{ secrets.VITE_SUPABASE_URL_PROD }}
+          VITE_SUPABASE_ANON_KEY_PROD: ${{ secrets.VITE_SUPABASE_ANON_KEY_PROD }}
         run: npx playwright test --project=chromium --grep "@regression"
 
       - name: Upload Playwright report
