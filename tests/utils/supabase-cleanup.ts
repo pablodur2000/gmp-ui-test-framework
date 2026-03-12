@@ -121,6 +121,104 @@ export interface CleanupResult {
   resourceId: string;
 }
 
+export interface CreateProductResult {
+  success: boolean;
+  productId?: string;
+  error?: string;
+}
+
+/**
+ * Create a test product with a TEST_DELETE_ prefix for isolated testing
+ * @param productData - Product data to create
+ * @returns Create result with product ID
+ */
+export async function createTestProduct(productData: {
+  title: string;
+  description: string;
+  short_description: string;
+  price: number;
+  available: boolean;
+  featured: boolean;
+  inventory_status: 'disponible_pieza_unica' | 'disponible_encargo_mismo_material' | 'disponible_encargo_diferente_material' | 'no_disponible';
+  images?: string[];
+  category_id?: string;
+}): Promise<CreateProductResult> {
+  try {
+    // Ensure title has a TEST_ prefix for safety (check for any TEST_ prefix, not just TEST_DELETE_)
+    const hasTestPrefix = productData.title.startsWith('TEST_');
+    const safeTitle = hasTestPrefix 
+      ? productData.title 
+      : `TEST_DELETE_${productData.title}`;
+
+    const supabase = await getSupabaseClient();
+    if (!supabase) {
+      return {
+        success: false,
+        error: 'Supabase credentials not configured'
+      };
+    }
+
+    // Get first available category if category_id not provided
+    let categoryId = productData.category_id;
+    if (!categoryId) {
+      const { data: categories, error: catError } = await supabase
+        .from('categories')
+        .select('id')
+        .limit(1)
+        .single();
+      
+      if (catError || !categories) {
+        console.warn('⚠️ No categories found, creating product without category');
+      } else {
+        categoryId = categories.id;
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('products')
+      .insert({
+        title: safeTitle,
+        description: productData.description,
+        short_description: productData.short_description,
+        price: productData.price,
+        available: productData.available,
+        featured: productData.featured,
+        inventory_status: productData.inventory_status,
+        images: productData.images || [],
+        category_id: categoryId || null
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error(`❌ Failed to create test product: ${error.message}`);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+
+    if (!data || !data.id) {
+      return {
+        success: false,
+        error: 'Product created but no ID returned'
+      };
+    }
+
+    console.log(`✅ Created test product: ${safeTitle} (${data.id})`);
+    return {
+      success: true,
+      productId: data.id
+    };
+  } catch (error: any) {
+    console.error(`❌ Error creating test product: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 /**
  * Delete a product by ID
  * @param productId - Product ID to delete

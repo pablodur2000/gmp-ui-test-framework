@@ -110,9 +110,12 @@ test.describe('Smoke Test - Critical Public Paths (QA-5)', () => {
     // SECTION 5: Featured Products Section with Supabase Data
     // ============================================================================
     const featuredSection = page.locator(TestSelectors.homeFeaturedProducts);
-    await waitForElementInViewport(page, TestSelectors.homeFeaturedProducts);
-
-    if (await featuredSection.count() > 0) {
+    
+    // Check if featured products section exists before trying to scroll to it
+    const featuredSectionExists = await featuredSection.count() > 0;
+    
+    if (featuredSectionExists) {
+      await waitForElementInViewport(page, TestSelectors.homeFeaturedProducts);
       await expect(featuredSection).toBeVisible();
 
       // Wait for API response

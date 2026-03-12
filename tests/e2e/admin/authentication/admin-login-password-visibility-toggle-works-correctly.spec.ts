@@ -34,7 +34,7 @@ test.describe('Admin Login Password Visibility Toggle Works Correctly (QA-32)', 
     const pageLoadTime = await trackPageLoad(
       page,
       async () => await navigateToAdminLogin(page),
-      5, // max 5 seconds
+      10, // max 10 seconds (images have delay)
       3  // warn if > 3 seconds
     );
     

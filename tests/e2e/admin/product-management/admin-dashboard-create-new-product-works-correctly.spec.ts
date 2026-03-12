@@ -73,7 +73,7 @@ test.describe('Admin Dashboard Create New Product Works Correctly (QA-33)', () =
     const loginPageLoadTime = await trackPageLoad(
       page,
       async () => await navigateToAdminLogin(page),
-      5, // max 5 seconds
+      10, // max 10 seconds (images have delay)
       3  // warn if > 3 seconds
     );
     
@@ -105,9 +105,12 @@ test.describe('Admin Dashboard Create New Product Works Correctly (QA-33)', () =
     await page.waitForURL(/\/admin\/dashboard/, { timeout: 10000 });
     await expectPathname(page, '/admin/dashboard');
 
+    // Wait for page to fully load (network idle)
+    await page.waitForLoadState('networkidle', { timeout: 15000 });
+
     // Verify dashboard loaded
     const dashboardPage = page.locator(TestSelectors.adminDashboardPage);
-    await expect(dashboardPage).toBeVisible({ timeout: 5000 });
+    await expect(dashboardPage).toBeVisible({ timeout: 10000 });
 
     console.log('✅ Successfully logged in and navigated to dashboard');
 

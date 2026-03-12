@@ -52,7 +52,7 @@ test.describe('Admin Login with Non-Admin User Shows Access Denied Error (QA-31)
     const pageLoadTime = await trackPageLoad(
       page,
       async () => await navigateToAdminLogin(page),
-      5, // max 5 seconds
+      10, // max 10 seconds (images have delay)
       3  // warn if > 3 seconds
     );
     

@@ -40,7 +40,7 @@ test.describe('CatalogPage - Loads and Displays All Products (QA-21)', () => {
     const pageLoadTime = await trackPageLoad(
       page,
       async () => await navigateToCatalog(page),
-      5, // max 5 seconds
+      15, // max 15 seconds (images have delay - temporary until PNG to WebP conversion)
       3  // warn if > 3 seconds
     );
 

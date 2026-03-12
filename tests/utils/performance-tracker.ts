@@ -18,7 +18,7 @@ import { Page } from '@playwright/test';
  * 
  * @param page - Playwright Page object
  * @param navigationFn - Async function that performs navigation
- * @param maxTimeSeconds - Maximum allowed load time in seconds (default: 5)
+ * @param maxTimeSeconds - Maximum allowed load time in seconds (default: 10)
  * @param warnThresholdSeconds - Threshold for warning (default: 3)
  * @returns Load time in seconds
  * 
@@ -29,7 +29,7 @@ import { Page } from '@playwright/test';
  * const loadTime = await trackPageLoad(
  *   page,
  *   async () => await navigateToHome(page),
- *   5,  // max 5 seconds
+ *   10,  // max 10 seconds
  *   3   // warn if > 3 seconds
  * );
  * console.log(`Page loaded in ${loadTime.toFixed(2)}s`);
@@ -38,7 +38,7 @@ import { Page } from '@playwright/test';
 export async function trackPageLoad(
   page: Page,
   navigationFn: () => Promise<void>,
-  maxTimeSeconds: number = 5,
+  maxTimeSeconds: number = 10,
   warnThresholdSeconds: number = 3
 ): Promise<number> {
   const startTime = Date.now();

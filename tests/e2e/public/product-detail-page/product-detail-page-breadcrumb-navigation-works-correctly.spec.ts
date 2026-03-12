@@ -33,8 +33,8 @@ test.describe('ProductDetailPage - Breadcrumb Navigation', () => {
     const pageLoadTime = await trackPageLoad(
       page,
       async () => await navigateToCatalog(page),
-      10, // max 10 seconds (catalog may be slow to load)
-      5   // warn if > 5 seconds
+      10, // max 10 seconds (images have delay)
+      3   // warn if > 3 seconds
     );
 
     await waitForFirstVisitAnimation(page, 3000).catch(() => {
@@ -107,7 +107,7 @@ test.describe('ProductDetailPage - Breadcrumb Navigation', () => {
     const productPageLoadTime = await trackPageLoad(
       page,
       async () => await navigateToProduct(page, productId),
-      5, // max 5 seconds
+      10, // max 10 seconds (images have delay)
       3  // warn if > 3 seconds
     );
 

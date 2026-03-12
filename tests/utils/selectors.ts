@@ -117,9 +117,14 @@ export const TestSelectors = {
   productDetailPrice: '[data-testid="product-detail-price"]',
   productDetailDescription: '[data-testid="product-detail-description"]',
   productDetailImageGallery: '[data-testid="product-detail-image-gallery"]',
+  productDetailMainImage: '[data-testid="product-detail-main-image"]',
+  productDetailThumbnail: (index: number) => `[data-testid="product-detail-thumbnail-${index}"]`,
+  productDetailNoImage: '[data-testid="product-detail-no-image"]',
   productDetailImage: (index: number) => `[data-testid="product-detail-image-${index}"]`,
   productDetailInventoryStatus: '[data-testid="product-detail-inventory-status"]',
   productDetailRelatedProducts: '[data-testid="product-detail-related-products"]',
+  productDetailLoading: '[data-testid="product-detail-loading"]',
+  productDetailNotFound: '[data-testid="product-detail-not-found"]',
   productDetailBreadcrumb: '[data-testid="product-detail-breadcrumb"]',
   productDetailBreadcrumbInicio: '[data-testid="product-detail-breadcrumb-inicio"]',
   productDetailBreadcrumbCatalogo: '[data-testid="product-detail-breadcrumb-catalogo"]',
@@ -163,6 +168,20 @@ export const TestSelectors = {
   adminProductEditForm: '[data-testid="admin-product-edit-form"]',
   adminProductEditFormTitleInput: '[data-testid="admin-product-edit-form-title-input"]',
   adminProductEditFormSubmitButton: '[data-testid="admin-product-edit-form-submit-button"]',
+  
+  // Delete Product Confirmation Modal
+  adminDeleteProductConfirmationModal: '[data-testid="admin-delete-product-confirmation-modal"]',
+  adminDeleteProductConfirmationModalTitle: '[data-testid="admin-delete-product-confirmation-modal-title"]',
+  adminDeleteProductConfirmationModalCloseButton: '[data-testid="admin-delete-product-confirmation-modal-close-button"]',
+  adminDeleteProductConfirmationModalCancelButton: '[data-testid="admin-delete-product-confirmation-modal-cancel-button"]',
+  adminDeleteProductConfirmationModalConfirmButton: '[data-testid="admin-delete-product-confirmation-modal-confirm-button"]',
+  
+  // Products Catalog
+  adminProductsCatalogContent: '[data-testid="admin-products-catalog-content"]',
+  adminProductSearchInput: '[data-testid="admin-product-search-input"]',
+  adminExportProductsButton: '[data-testid="admin-export-products-button"]',
+  adminProductsLoading: '[data-testid="admin-products-loading"]',
+  adminProductsEmptyState: '[data-testid="admin-products-empty-state"]',
 } as const;
 
 /**

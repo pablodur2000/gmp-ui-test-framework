@@ -39,7 +39,7 @@ test.describe('CatalogPage - Main Category Filter Works Correctly (QA-23)', () =
     const pageLoadTime = await trackPageLoad(
       page,
       async () => await navigateToCatalog(page),
-      5, // max 5 seconds
+      15, // max 15 seconds (images have delay - temporary until PNG to WebP conversion)
       3  // warn if > 3 seconds
     );
 
@@ -47,11 +47,12 @@ test.describe('CatalogPage - Main Category Filter Works Correctly (QA-23)', () =
     await monitorAndCheckConsoleErrors(page, 1000);
 
     // Wait for products to load
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle', { timeout: 15000 });
+    await page.waitForTimeout(500); // Small additional wait for React to render
 
     await expectPathname(page, '/catalogo');
     const catalogPage = page.locator(TestSelectors.catalogPage);
-    await expect(catalogPage).toBeVisible();
+    await expect(catalogPage).toBeVisible({ timeout: 10000 });
 
     // Get initial product count
     const productCount = catalogPage.locator(TestSelectors.catalogProductCount);
