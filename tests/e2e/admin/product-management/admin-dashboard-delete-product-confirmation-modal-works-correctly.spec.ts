@@ -300,7 +300,11 @@ test.describe('Admin Dashboard Delete Product Confirmation Modal Works Correctly
     const testProductStillExists = await deletedProductCard.count();
     expect(testProductStillExists).toBe(0);
     
-    // Clear the search filter to see all products and verify total count decreased
+    // Verify deletion is complete - our test product is gone
+    // We don't verify total count because other tests may create/delete products in parallel
+    // The only reliable check is that our specific test product was deleted (verified above)
+    
+    // Double-check that our test product is not in the full list (after clearing search)
     const searchInputAfterDelete = page.locator(TestSelectors.adminProductSearchInput).or(
       page.getByPlaceholder(/buscar productos por nombre/i)
     );
@@ -309,25 +313,12 @@ test.describe('Admin Dashboard Delete Product Confirmation Modal Works Correctly
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000); // Wait for search to clear and products to reload
     
-    // Verify product count (now counting all products, not just filtered)
-    const finalProductCards = page.locator('[data-testid^="admin-product-card"]');
-    const finalCount = await finalProductCards.count();
+    // Verify our test product is still deleted (not in the full list)
+    const testProductInFullList = page.locator(TestSelectors.adminProductCard(testProductId));
+    const testProductStillInList = await testProductInFullList.count();
+    expect(testProductStillInList).toBe(0);
     
-    // Verify our test product was deleted (primary check - already verified above)
-    // The count comparison accounts for parallel test runs:
-    // - Our test product was deleted (should decrease count by 1)
-    // - But other tests may create/delete test products (could change count)
-    // So we verify the count is reasonable, not exact
-    expect(finalCount).toBeGreaterThan(0);
-    
-    // Count should be within reasonable range accounting for parallel test interference
-    // Allow: initial - 1 (our product deleted) to initial + 3 (other tests created products)
-    const minExpectedCount = Math.max(0, initialTotalCount - 1);
-    const maxExpectedCount = initialTotalCount + 3;
-    expect(finalCount).toBeGreaterThanOrEqual(minExpectedCount);
-    expect(finalCount).toBeLessThanOrEqual(maxExpectedCount);
-    
-    console.log(`✅ Test product deleted - final count: ${finalCount} (initial: ${initialTotalCount}, expected range: ${minExpectedCount}-${maxExpectedCount})`);
+    console.log(`✅ Test product deleted and verified - not found in full product list`);
 
     // Mark product as deleted (cleanup will still try to remove it, but it should already be gone)
     console.log('✅ Eliminar confirmed and test product deleted');
