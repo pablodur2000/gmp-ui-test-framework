@@ -129,6 +129,7 @@ export const TestSelectors = {
   productDetailBreadcrumbInicio: '[data-testid="product-detail-breadcrumb-inicio"]',
   productDetailBreadcrumbCatalogo: '[data-testid="product-detail-breadcrumb-catalogo"]',
   productDetailBreadcrumbCurrent: '[data-testid="product-detail-breadcrumb-current"]',
+  productDetailBackToCatalog: '[data-testid="product-detail-back-to-catalog"]',
   
   // ============================================
   // Admin Pages
@@ -182,6 +183,32 @@ export const TestSelectors = {
   adminExportProductsButton: '[data-testid="admin-export-products-button"]',
   adminProductsLoading: '[data-testid="admin-products-loading"]',
   adminProductsEmptyState: '[data-testid="admin-products-empty-state"]',
+  
+  // Sales Management
+  adminSalesViewCard: '[data-testid="admin-sales-view-card"]',
+  adminSalesViewHeader: '[data-testid="admin-sales-view-header"]',
+  adminSalesSearchInput: '[data-testid="admin-sales-search-input"]',
+  adminSalesLegend: '[data-testid="admin-sales-legend"]',
+  adminSalesList: '[data-testid="admin-sales-list"]',
+  adminSalesEmptyState: '[data-testid="admin-sales-empty-state"]',
+  adminSaleCard: (id: string | number) => `[data-testid="admin-sale-card-${id}"]`,
+  adminSaleStatusSelect: (id: string | number) => `[data-testid="admin-sale-status-select-${id}"]`,
+  
+  // Activity Logs
+  adminActivityViewHeader: '[data-testid="admin-activity-view-header"]',
+  adminActivitySearchInput: '[data-testid="admin-activity-search-input"]',
+  adminActivityFilters: '[data-testid="admin-activity-filters"]',
+  adminActivityFilterAll: '[data-testid="admin-activity-filter-all"]',
+  adminActivityFilterCreate: '[data-testid="admin-activity-filter-create"]',
+  adminActivityFilterUpdate: '[data-testid="admin-activity-filter-update"]',
+  adminActivityFilterDelete: '[data-testid="admin-activity-filter-delete"]',
+  adminActivityList: '[data-testid="admin-activity-list"]',
+  adminActivityRow: (id: string | number) => `[data-testid="admin-activity-row-${id}"]`,
+  adminActivityActionText: (id: string | number) => `[data-testid="admin-activity-action-text-${id}"]`,
+  adminActivityMetadata: (id: string | number) => `[data-testid="admin-activity-metadata-${id}"]`,
+  adminActivityDetails: (id: string | number) => `[data-testid="admin-activity-details-${id}"]`,
+  adminActivityDeleteButton: (id: string | number) => `[data-testid="admin-activity-delete-button-${id}"]`,
+  adminActivityEmptyState: '[data-testid="admin-activity-empty-state"]',
 } as const;
 
 /**

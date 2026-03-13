@@ -242,14 +242,25 @@ test.describe('Admin Dashboard Delete Product Works Correctly (QA-47)', () => {
     const deletedProductCard = page.locator(TestSelectors.adminProductCard(testProductId));
     await expect(deletedProductCard).not.toBeVisible({ timeout: 10000 });
 
-    // Verify product count decreased (if there were multiple products)
+    // Re-apply search filter to get accurate count (search may have been cleared after deletion)
+    await searchInput.clear();
+    await searchInput.fill('TEST_DELETE_');
+    await searchInput.press('Enter');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Verify product count decreased (only count filtered TEST_DELETE_ products)
     if (initialCount > 1) {
       const newProductCards = page.locator('[data-testid^="admin-product-card"]');
       const newCount = await newProductCards.count();
       expect(newCount).toBe(initialCount - 1);
       console.log(`✅ Product count decreased from ${initialCount} to ${newCount}`);
     } else {
-      console.log('ℹ️ Only one product was present, so count verification skipped');
+      // If initialCount was 1, after deletion there should be 0 filtered products
+      const newProductCards = page.locator('[data-testid^="admin-product-card"]');
+      const newCount = await newProductCards.count();
+      expect(newCount).toBe(0);
+      console.log(`✅ Product count decreased from ${initialCount} to ${newCount}`);
     }
 
     // Verify product title is no longer visible

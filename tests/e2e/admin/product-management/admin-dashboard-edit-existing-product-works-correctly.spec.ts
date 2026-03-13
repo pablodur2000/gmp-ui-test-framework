@@ -83,14 +83,7 @@ test.describe('Admin Dashboard Edit Existing Product Works Correctly (QA-34)', (
     // ============================================================================
     console.log('📋 Setup: Logging in as admin');
 
-    const loginPageLoadTime = await trackPageLoad(
-      page,
-      async () => await navigateToAdminLogin(page),
-      10, // max 10 seconds (images have delay)
-      3  // warn if > 3 seconds
-    );
-    
-    // Clear any existing authentication
+    // Clear any existing authentication before loading login (avoids affecting new session)
     await page.context().clearCookies();
     try {
       await page.evaluate(() => {
@@ -100,6 +93,13 @@ test.describe('Admin Dashboard Edit Existing Product Works Correctly (QA-34)', (
     } catch (e) {
       console.log('ℹ️ Could not clear storage (may be in secure context)');
     }
+
+    const loginPageLoadTime = await trackPageLoad(
+      page,
+      async () => await navigateToAdminLogin(page),
+      10, // max 10 seconds (images have delay)
+      3  // warn if > 3 seconds
+    );
 
     await monitorAndCheckConsoleErrors(page, 1000);
     await page.waitForURL(/\/admin\/login/, { timeout: 10000 });
@@ -114,13 +114,12 @@ test.describe('Admin Dashboard Edit Existing Product Works Correctly (QA-34)', (
     await passwordInput.fill(adminPassword);
     await loginSubmitButton.click();
 
-    // Wait for navigation to dashboard
-    await page.waitForURL(/\/admin\/dashboard/, { timeout: 10000 });
-    await expectPathname(page, '/admin/dashboard');
-
-    // Verify dashboard loaded
+    // Wait for dashboard to be visible (not just URL). Dashboard runs checkUser() on mount
+    // and may redirect back to login if session isn't ready; waiting for the element ensures
+    // we only proceed when the app has rendered the dashboard.
     const dashboardPage = page.locator(TestSelectors.adminDashboardPage);
-    await expect(dashboardPage).toBeVisible({ timeout: 5000 });
+    await expect(dashboardPage).toBeVisible({ timeout: 15000 });
+    await expectPathname(page, '/admin/dashboard');
 
     console.log('✅ Successfully logged in and navigated to dashboard');
 
