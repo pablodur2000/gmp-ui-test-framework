@@ -509,8 +509,9 @@ export async function cleanupTestSale(saleId: string): Promise<CleanupResult> {
     }
     
     // First delete sale items (foreign key constraint)
+    // Note: Table name is 'sales_items' not 'sale_items'
     const { error: itemsError } = await supabase
-      .from('sale_items')
+      .from('sales_items')
       .delete()
       .eq('sale_id', saleId);
 

@@ -106,6 +106,9 @@ test.describe('Admin Dashboard Update Sale Status to Cancelado Works Correctly (
     testSaleId = testSale.saleId;
     console.log(`✅ Created test sale: ${testSaleId}`);
 
+    // Wait a moment for database transaction to commit
+    await page.waitForTimeout(1000);
+
     // ============================================================================
     // SECTION 1: Open Sales View
     // ============================================================================
@@ -119,6 +122,7 @@ test.describe('Admin Dashboard Update Sale Status to Cancelado Works Correctly (
     await expect(salesHeader).toBeVisible({ timeout: 10000 });
 
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000); // Wait for sales list to render
 
     // Check empty state
     const emptyState = page.locator(TestSelectors.adminSalesEmptyState);
@@ -129,17 +133,42 @@ test.describe('Admin Dashboard Update Sale Status to Cancelado Works Correctly (
       return;
     }
 
-    // Wait for the test sale to appear in the list (with retries)
-    let testSaleCard = page.locator(TestSelectors.adminSaleCard(testSaleId));
-    let attempts = 0;
-    const maxAttempts = 5;
+    // Wait for the test sale to appear in the list
+    // First, ensure sales list has loaded by waiting for any sale card or empty state
+    const anySaleCard = page.locator('[data-testid^="admin-sale-card-"]').first();
+    const hasAnySales = (await anySaleCard.count()) > 0;
     
-    while (attempts < maxAttempts && (await testSaleCard.count()) === 0) {
-      await page.waitForTimeout(2000);
+    if (hasAnySales) {
+      await expect(anySaleCard).toBeVisible({ timeout: 15000 });
+    }
+    
+    // Now wait for our specific test sale to appear (with retries via reload if needed)
+    const testSaleCard = page.locator(TestSelectors.adminSaleCard(testSaleId));
+    let attempts = 0;
+    const maxAttempts = 20; // Increased attempts
+    
+    while (attempts < maxAttempts) {
+      const count = await testSaleCard.count();
+      if (count > 0) {
+        // Sale found, break out of loop
+        console.log(`✅ Test sale found after ${attempts} attempts`);
+        break;
+      }
+      
+      // Sale not found, reload and reopen sales view
+      console.log(`⏳ Test sale not found yet, reloading... (attempt ${attempts + 1}/${maxAttempts})`);
       await page.reload();
       await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(1000);
-      testSaleCard = page.locator(TestSelectors.adminSaleCard(testSaleId));
+      
+      // Reopen sales view after reload (it closes on page reload)
+      const viewSalesCardAfterReload = page.locator(TestSelectors.adminSalesViewCard);
+      await expect(viewSalesCardAfterReload).toBeVisible({ timeout: 10000 });
+      await viewSalesCardAfterReload.click();
+      
+      // Wait for sales view to be visible again
+      await expect(salesHeader).toBeVisible({ timeout: 10000 });
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(3000); // Wait for sales list to render
       attempts++;
     }
 
@@ -148,8 +177,8 @@ test.describe('Admin Dashboard Update Sale Status to Cancelado Works Correctly (
     // ============================================================================
     console.log('🔍 Section 2: Finding test sale and updating status to "cancelado"');
 
-    // Find our test sale by ID
-    await expect(testSaleCard).toBeVisible({ timeout: 10000 });
+    // Find our test sale by ID - use longer timeout since we've already tried to find it
+    await expect(testSaleCard).toBeVisible({ timeout: 15000 });
 
     const statusSelect = page.locator(TestSelectors.adminSaleStatusSelect(testSaleId));
     await expect(statusSelect).toBeVisible({ timeout: 10000 });
