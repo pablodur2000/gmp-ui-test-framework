@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { navigateToAdminLogin, expectPathname } from '../../../utils/navigation';
 import { TestSelectors } from '../../../utils/selectors';
-import { stepGroup } from '../../../utils/step-executor';
 import { monitorAndCheckConsoleErrors, trackPageLoad } from '../../../utils';
 
 /**
@@ -25,6 +24,9 @@ test.describe('Admin Dashboard Filter Activity by Delete Action Works Correctly 
   test('should filter recent activity by DELETE action and show correct results', {
     tag: ['@regression', '@e2e', '@admin', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
+    // ============================================================================
+    // SETUP: Get admin credentials from environment
+    // ============================================================================
     const adminEmail = process.env.TEST_ADMIN_EMAIL;
     const adminPassword = process.env.TEST_ADMIN_PASSWORD;
 
@@ -34,116 +36,113 @@ test.describe('Admin Dashboard Filter Activity by Delete Action Works Correctly 
       return;
     }
 
-    await stepGroup('Setup: Login to admin dashboard', [
-      {
-        name: 'Navigate to admin login',
-        action: async () => {
-          await trackPageLoad(page, async () => await navigateToAdminLogin(page), 10, 3);
-          await monitorAndCheckConsoleErrors(page, 1000);
-          await expectPathname(page, '/admin/login');
-        },
-      },
-      {
-        name: 'Submit login form',
-        action: async () => {
-          await page.locator(TestSelectors.adminLoginEmailInput).fill(adminEmail);
-          await page.locator(TestSelectors.adminLoginPasswordInput).fill(adminPassword);
-          await page.locator(TestSelectors.adminLoginSubmitButton).click();
+    // ============================================================================
+    // SETUP: Navigate to Admin Login and Login as Admin
+    // ============================================================================
+    const pageLoadTime = await trackPageLoad(
+      page,
+      async () => await navigateToAdminLogin(page),
+      10, // max 10 seconds (images have delay)
+      3   // warn if > 3 seconds
+    );
 
-          await page.waitForURL(/\/admin\/dashboard/, { timeout: 15000 });
-          await page.waitForLoadState('networkidle');
-          await expect(page.locator(TestSelectors.adminDashboardPage)).toBeVisible({ timeout: 10000 });
-        },
-      },
-    ]);
+    await monitorAndCheckConsoleErrors(page, 1000);
+    await expectPathname(page, '/admin/login');
 
-    await stepGroup('Pre-check: Activity view controls are visible', [
-      {
-        name: 'Verify Activity view header is visible',
-        action: async () => {
-          const activityHeader = page.locator(TestSelectors.adminActivityViewHeader);
-          await expect(activityHeader).toBeVisible({ timeout: 10000 });
-          await expect(activityHeader).toHaveText(/actividad reciente/i);
-        },
-      },
-      {
-        name: 'Verify filter pills exist',
-        action: async () => {
-          await expect(page.locator(TestSelectors.adminActivityFilters)).toBeVisible({ timeout: 10000 });
-          await expect(page.locator(TestSelectors.adminActivityFilterAll)).toBeVisible({ timeout: 10000 });
-          await expect(page.locator(TestSelectors.adminActivityFilterCreate)).toBeVisible({ timeout: 10000 });
-          await expect(page.locator(TestSelectors.adminActivityFilterUpdate)).toBeVisible({ timeout: 10000 });
-          await expect(page.locator(TestSelectors.adminActivityFilterDelete)).toBeVisible({ timeout: 10000 });
-        },
-      },
-    ]);
+    // Fill login form
+    await page.locator(TestSelectors.adminLoginEmailInput).fill(adminEmail);
+    await page.locator(TestSelectors.adminLoginPasswordInput).fill(adminPassword);
+    await page.locator(TestSelectors.adminLoginSubmitButton).click();
 
-    await stepGroup('Action: Apply DELETE filter', [
-      {
-        name: 'Click "Eliminar" filter pill',
-        action: async () => {
-          await page.locator(TestSelectors.adminActivityFilterDelete).click();
-        },
-      },
-      {
-        name: 'Wait for filtered state to render (list or empty)',
-        action: async () => {
-          // searchActivity runs via useEffect; allow time for async fetch + React update
-          await page.waitForLoadState('networkidle');
-          await page.waitForTimeout(300);
-        },
-      },
-    ]);
+    // Wait for dashboard
+    await page.waitForURL(/\/admin\/dashboard/, { timeout: 15000 });
+    await page.waitForLoadState('networkidle');
 
-    await stepGroup('Assert: Filtered results match DELETE', [
-      {
-        name: 'Validate empty-state OR list rows consistent with DELETE',
-        action: async () => {
-          const emptyState = page.locator(TestSelectors.adminActivityEmptyState);
-          const activityList = page.locator(TestSelectors.adminActivityList);
+    const adminDashboardPage = page.locator(TestSelectors.adminDashboardPage);
+    await expect(adminDashboardPage).toBeVisible({ timeout: 10000 });
 
-          const hasEmptyState = (await emptyState.count()) > 0 && (await emptyState.isVisible());
-          const hasList = (await activityList.count()) > 0 && (await activityList.isVisible());
+    console.log(`✅ Logged in as admin and navigated to dashboard (load time: ${pageLoadTime.toFixed(2)}s)`);
 
-          if (hasEmptyState) {
-            await expect(emptyState).toBeVisible({ timeout: 10000 });
-            await expect(emptyState).toHaveText(/no se encontraron actividades que coincidan con los filtros/i);
-            console.log('ℹ️ QA-70: DELETE filter shows valid empty-state (no matching activities)');
-            return;
-          }
+    // ============================================================================
+    // SECTION 1: Verify Activity View Controls
+    // ============================================================================
+    console.log('🔍 Section 1: Verifying activity view controls');
 
-          expect(hasList).toBeTruthy();
-          await expect(activityList).toBeVisible({ timeout: 10000 });
+    // Assert main content title is "Actividad Reciente"
+    const activityHeader = page.locator(TestSelectors.adminActivityViewHeader);
+    await expect(activityHeader).toBeVisible({ timeout: 10000 });
+    await expect(activityHeader).toHaveText(/actividad reciente/i);
 
-          const activityRows = page.locator('[data-testid^="admin-activity-row-"]');
-          const rowCount = await activityRows.count();
-          expect(rowCount).toBeGreaterThan(0);
+    // Assert filter pills visible: "Todos", "Crear", "Actualizar", "Eliminar"
+    const filtersContainer = page.locator(TestSelectors.adminActivityFilters);
+    await expect(filtersContainer).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(TestSelectors.adminActivityFilterAll)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(TestSelectors.adminActivityFilterCreate)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(TestSelectors.adminActivityFilterUpdate)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(TestSelectors.adminActivityFilterDelete)).toBeVisible({ timeout: 10000 });
 
-          const rowsToCheck = Math.min(rowCount, 5);
-          for (let i = 0; i < rowsToCheck; i++) {
-            const row = activityRows.nth(i);
-            await expect(row).toBeVisible({ timeout: 10000 });
+    console.log('✅ Activity view header and filter pills are visible');
 
-            // The dot color encodes the action type. For DELETE it should be red.
-            const dot = row.locator('div.w-2.h-2.rounded-full');
-            await expect(dot).toBeVisible({ timeout: 10000 });
-            const dotClass = (await dot.getAttribute('class')) || '';
-            expect(dotClass).toMatch(/bg-red-500/);
+    // ============================================================================
+    // SECTION 2: Apply DELETE Filter
+    // ============================================================================
+    console.log('🔍 Section 2: Applying DELETE filter');
 
-            // Validate the action text is consistent with a DELETE action
-            const rowTestId = await row.getAttribute('data-testid');
-            const idMatch = rowTestId?.match(/admin-activity-row-(.+)/);
-            expect(idMatch?.[1]).toBeTruthy();
-            const activityId = idMatch![1];
+    await page.locator(TestSelectors.adminActivityFilterDelete).click();
 
-            const actionText = page.locator(TestSelectors.adminActivityActionText(activityId));
-            await expect(actionText).toBeVisible({ timeout: 10000 });
-            await expect(actionText).toHaveText(/eliminó|elimino|eliminar|eliminada|eliminado/i);
-          }
+    // searchActivity runs via useEffect; allow time for async fetch + React update
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(300);
 
-          console.log(`✅ QA-70: DELETE filter applied and verified on ${rowsToCheck} row(s)`);
-        },
-      },
-    ]);
+    console.log('✅ DELETE filter pill clicked');
+
+    // ============================================================================
+    // SECTION 3: Verify Filtered Results
+    // ============================================================================
+    console.log('🔍 Section 3: Verifying filtered results match DELETE');
+
+    const emptyState = page.locator(TestSelectors.adminActivityEmptyState);
+    const activityList = page.locator(TestSelectors.adminActivityList);
+
+    const hasEmptyState = (await emptyState.count()) > 0 && (await emptyState.isVisible());
+    const hasList = (await activityList.count()) > 0 && (await activityList.isVisible());
+
+    if (hasEmptyState) {
+      await expect(emptyState).toBeVisible({ timeout: 10000 });
+      await expect(emptyState).toHaveText(/no se encontraron actividades que coincidan con los filtros/i);
+      console.log('ℹ️ QA-70: DELETE filter shows valid empty-state (no matching activities)');
+      return;
+    }
+
+    expect(hasList).toBeTruthy();
+    await expect(activityList).toBeVisible({ timeout: 10000 });
+
+    const activityRows = page.locator('[data-testid^="admin-activity-row-"]');
+    const rowCount = await activityRows.count();
+    expect(rowCount).toBeGreaterThan(0);
+
+    const rowsToCheck = Math.min(rowCount, 5);
+    for (let i = 0; i < rowsToCheck; i++) {
+      const row = activityRows.nth(i);
+      await expect(row).toBeVisible({ timeout: 10000 });
+
+      // The dot color encodes the action type. For DELETE it should be red.
+      const dot = row.locator('div.w-2.h-2.rounded-full');
+      await expect(dot).toBeVisible({ timeout: 10000 });
+      const dotClass = (await dot.getAttribute('class')) || '';
+      expect(dotClass).toMatch(/bg-red-500/);
+
+      // Validate the action text is consistent with a DELETE action
+      const rowTestId = await row.getAttribute('data-testid');
+      const idMatch = rowTestId?.match(/admin-activity-row-(.+)/);
+      expect(idMatch?.[1]).toBeTruthy();
+      const activityId = idMatch![1];
+
+      const actionText = page.locator(TestSelectors.adminActivityActionText(activityId));
+      await expect(actionText).toBeVisible({ timeout: 10000 });
+      await expect(actionText).toHaveText(/eliminó|elimino|eliminar|eliminada|eliminado/i);
+    }
+
+    console.log(`✅ QA-70: DELETE filter applied and verified on ${rowsToCheck} row(s)`);
   });
 });
