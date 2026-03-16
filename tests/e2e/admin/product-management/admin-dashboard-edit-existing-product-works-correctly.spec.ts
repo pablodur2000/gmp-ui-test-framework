@@ -6,6 +6,7 @@ import {
   monitorAndCheckConsoleErrors,
   TestCleanupTracker,
 } from '../../../utils';
+import { createTestProduct, cleanupTestProduct } from '../../../utils/supabase-cleanup';
 
 /**
  * E2E Test - Admin Dashboard Edit Existing Product Works Correctly (QA-34)
@@ -29,32 +30,23 @@ import {
  * - TEST_ADMIN_EMAIL: Admin user email address
  * - TEST_ADMIN_PASSWORD: Admin user password
  * 
- * Note: This test assumes at least one product exists in the database.
+ * Note: This test creates its own isolated test product for editing.
  */
 test.describe('Admin Dashboard Edit Existing Product Works Correctly (QA-34)', () => {
-  // Cleanup tracker for this test suite
-  const cleanupTracker = new TestCleanupTracker();
+  // Store test product ID for cleanup
+  let testProductId: string | null = null;
 
-  // Store original product data for cleanup
-  let originalProductData: any = null;
-  let editedProductId: string | null = null;
-
-  // Cleanup after each test - revert product to original state
+  // Cleanup after each test - CRITICAL: Always clean up test product, even if test fails
   test.afterEach(async () => {
-    // Revert product to original state if it was edited
-    if (editedProductId && originalProductData) {
-      console.log(`🔄 Reverting product ${editedProductId} to original state`);
-      const revertResult = await cleanupTracker.cleanupAll();
-      // Note: We're not deleting, just reverting, so cleanup tracker won't help here
-      // We'll need to manually revert via API if needed
-      // For now, we'll leave the edited product as-is (it's a valid test scenario)
-    }
-
-    // Clean up any tracked resources
-    const tracked = cleanupTracker.getTrackedCount();
-    if (tracked.products > 0 || tracked.categories > 0 || tracked.sales > 0 || tracked.activityLogs > 0) {
-      console.log(`📋 Cleanup: Cleaning up ${tracked.products} products, ${tracked.categories} categories, ${tracked.sales} sales, ${tracked.activityLogs} activity logs`);
-      await cleanupTracker.cleanupAll();
+    if (testProductId) {
+      console.log(`🧹 Cleanup: Removing test product ${testProductId}`);
+      const result = await cleanupTestProduct(testProductId);
+      if (result.success) {
+        console.log(`✅ Cleanup: Test product ${testProductId} removed successfully`);
+      } else {
+        console.log(`ℹ️ Product ${testProductId} not found (may have been already deleted)`);
+      }
+      testProductId = null;
     }
   });
 
@@ -75,8 +67,33 @@ test.describe('Admin Dashboard Edit Existing Product Works Correctly (QA-34)', (
 
     // Generate unique product data for this test
     const timestamp = Date.now();
-    const updatedProductTitle = `Updated Product ${timestamp}`;
+    const testProductTitle = `TEST_EDIT_${timestamp}`;
+    const updatedProductTitle = `TEST_EDIT_UPDATED_${timestamp}`;
     const updatedProductShortDescription = `Updated short desc ${timestamp}`;
+
+    // ============================================================================
+    // SETUP: Create isolated test product for editing
+    // ============================================================================
+    console.log('📦 Creating isolated test product for editing...');
+    const testProduct = await createTestProduct({
+      title: testProductTitle,
+      description: `Test product created for edit test at ${new Date().toISOString()}`,
+      short_description: `Test edit product ${timestamp}`,
+      price: 1000,
+      available: true,
+      featured: false,
+      inventory_status: 'disponible_pieza_unica' as const,
+      images: []
+    });
+
+    if (!testProduct.success || !testProduct.productId) {
+      test.skip();
+      console.log(`⚠️ Skipping test: Failed to create test product: ${testProduct.error}`);
+      return;
+    }
+
+    testProductId = testProduct.productId;
+    console.log(`✅ Created test product: ${testProductTitle} (${testProductId})`);
 
     // ============================================================================
     // SETUP: Login as admin
@@ -168,48 +185,25 @@ test.describe('Admin Dashboard Edit Existing Product Works Correctly (QA-34)', (
       { timeout: 15000 }
     );
 
-    // Get product cards
-    const productCards = page.locator('[data-testid^="admin-product-card"]');
-    const cardCount = await productCards.count();
-
-    // Check for empty state
-    const emptyState = page.locator(TestSelectors.adminProductsEmptyState).or(
-      page.getByText(/no se encontraron productos/i)
-    );
-    const isEmpty = await emptyState.count() > 0;
-
-    if (cardCount === 0 && isEmpty) {
-      console.log('ℹ️ No products available to edit. Test will be skipped.');
-      test.skip(true, 'No products available in catalog to edit');
-      return;
+    // Wait for the test product to appear in the list (with retries)
+    let testProductCard = page.locator(TestSelectors.adminProductCard(testProductId));
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    while (attempts < maxAttempts && (await testProductCard.count()) === 0) {
+      await page.waitForTimeout(2000);
+      await page.reload();
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+      testProductCard = page.locator(TestSelectors.adminProductCard(testProductId));
+      attempts++;
     }
 
-    if (cardCount === 0) {
-      console.log('ℹ️ No products found after waiting - catalog may be empty');
-      test.skip(true, 'No products available in catalog to edit');
-      return;
-    }
+    // Verify test product card exists
+    await expect(testProductCard).toBeVisible({ timeout: 10000 });
 
-    // Get first product card
-    const anyProductCard = productCards.first();
-    await expect(anyProductCard).toBeVisible({ timeout: 5000 });
-
-    // Get the product ID from the first product card
-    const firstProductCardElement = await anyProductCard.elementHandle();
-    if (!firstProductCardElement) {
-      throw new Error('Could not find first product card');
-    }
-
-    // Extract product ID from data-testid attribute
-    const productCardTestId = await firstProductCardElement.getAttribute('data-testid');
-    const productIdMatch = productCardTestId?.match(/admin-product-card-(.+)/);
-    if (!productIdMatch || !productIdMatch[1]) {
-      throw new Error('Could not extract product ID from product card');
-    }
-    const productId = productIdMatch[1];
-    editedProductId = productId;
-
-    console.log(`✅ Product catalog opened, found product with ID: ${productId}`);
+    const productId = testProductId;
+    console.log(`✅ Product catalog opened, found test product with ID: ${productId}`);
 
     // Get original product data for cleanup (via API response listener)
     const productDataResponsePromise = page.waitForResponse(
@@ -243,9 +237,9 @@ test.describe('Admin Dashboard Edit Existing Product Works Correctly (QA-34)', (
     const titleText = await modalTitle.textContent();
     expect(titleText).toContain('Editar Producto:');
 
-    // Get original product title from modal title
+    // Get original product title from modal title (should be our test product)
     const originalTitle = titleText?.replace('Editar Producto: ', '').trim() || '';
-    originalProductData = { title: originalTitle, id: productId };
+    expect(originalTitle).toBe(testProductTitle); // Verify we're editing our test product
 
     // Verify form is visible
     const editForm = page.locator(TestSelectors.adminProductEditForm);
@@ -371,7 +365,7 @@ test.describe('Admin Dashboard Edit Existing Product Works Correctly (QA-34)', (
     // ============================================================================
     // CLEANUP: Handled by test.afterEach hook
     // ============================================================================
-    // Product edit is reverted if needed (for now, we leave it as-is since it's a valid test)
+    // Test product will be cleaned up in afterEach hook
 
     console.log('✅ Test completed successfully');
   });

@@ -4,10 +4,6 @@
  * Central export point for all test utilities
  */
 
-// Step Executor (currently unused - consider removing)
-export { step, steps, stepGroup, extractStepsForDocumentation } from './step-executor';
-export type { StepOptions, StepResult } from './step-executor';
-
 // Navigation Helpers
 export {
   BASE_URL,
@@ -83,9 +79,13 @@ export {
 export {
   cleanupTestProduct,
   cleanupTestCategory,
+  createTestSale,
   cleanupTestSale,
+  createTestActivityLog,
   cleanupTestActivityLog,
   cleanupTestProducts,
   TestCleanupTracker,
   type CleanupResult,
+  type CreateSaleResult,
+  type CreateActivityLogResult,
 } from './supabase-cleanup';

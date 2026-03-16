@@ -5,6 +5,7 @@ import {
   trackPageLoad,
   monitorAndCheckConsoleErrors,
 } from '../../../utils';
+import { createTestSale, cleanupTestSale } from '../../../utils/supabase-cleanup';
 
 /**
  * E2E Test - Admin Dashboard Update Sale Status to Cancelado Works Correctly (QA-65)
@@ -17,13 +18,29 @@ import {
  *
  * Test Strategy:
  * - Desktop viewport only (1920x1080)
- * - Uses existing sales data (does not create new sales)
- * - Changes one sale's status to "cancelado" and then restores original status
- *   to avoid leaving persistent side effects in the database.
+ * - Creates isolated test sale for status update
+ * - Changes test sale's status to "cancelado" and then cleans up
  *
  * Tags: @regression, @e2e, @admin, @desktop, @development, @staging, @production
  */
 test.describe('Admin Dashboard Update Sale Status to Cancelado Works Correctly (QA-65)', () => {
+  // Store test sale ID for cleanup
+  let testSaleId: string | null = null;
+
+  // Cleanup after each test - CRITICAL: Always clean up test sale, even if test fails
+  test.afterEach(async () => {
+    if (testSaleId) {
+      console.log(`🧹 Cleanup: Removing test sale ${testSaleId}`);
+      const result = await cleanupTestSale(testSaleId);
+      if (result.success) {
+        console.log(`✅ Cleanup: Test sale ${testSaleId} removed successfully`);
+      } else {
+        console.log(`ℹ️ Sale ${testSaleId} not found (may have been already deleted)`);
+      }
+      testSaleId = null;
+    }
+  });
+
   test('should update sale status to Cancelado and reflect change in UI', {
     tag: ['@regression', '@e2e', '@admin', '@desktop', '@development', '@staging', '@production'],
   }, async ({ page }) => {
@@ -68,6 +85,28 @@ test.describe('Admin Dashboard Update Sale Status to Cancelado Works Correctly (
     console.log(`✅ Logged in as admin and navigated to dashboard (load time: ${pageLoadTime.toFixed(2)}s)`);
 
     // ============================================================================
+    // SETUP: Create isolated test sale for status update
+    // ============================================================================
+    console.log('📦 Creating isolated test sale for status update...');
+    const timestamp = Date.now();
+    const testSale = await createTestSale({
+      customer_name: `QA-65 Test Customer ${timestamp}`,
+      customer_email: `test-qa65-${timestamp}@example.com`,
+      total_amount: 5000,
+      status: 'pendiente', // Start with different status to test update
+      notes: 'Test sale for QA-65 status update test'
+    });
+
+    if (!testSale.success || !testSale.saleId) {
+      test.skip();
+      console.log(`⚠️ Skipping QA-65: Failed to create test sale: ${testSale.error}`);
+      return;
+    }
+
+    testSaleId = testSale.saleId;
+    console.log(`✅ Created test sale: ${testSaleId}`);
+
+    // ============================================================================
     // SECTION 1: Open Sales View
     // ============================================================================
     console.log('🔍 Section 1: Opening Sales view from dashboard cards for status update');
@@ -90,62 +129,40 @@ test.describe('Admin Dashboard Update Sale Status to Cancelado Works Correctly (
       return;
     }
 
-    // ============================================================================
-    // SECTION 2: Pick a Sale and Change Status to "cancelado"
-    // ============================================================================
-    console.log('🔍 Section 2: Updating first sale status to "cancelado" and restoring original');
-
-    // Use the first sale card
-    const salesList = page.locator(TestSelectors.adminSalesList);
-    await expect(salesList).toBeVisible({ timeout: 10000 });
-
-    const firstSaleCard = salesList.locator('[data-testid^="admin-sale-card-"]').first();
-    await expect(firstSaleCard).toBeVisible({ timeout: 10000 });
-
-    // Extract sale ID from data-testid to target status select
-    const saleCardTestId = await firstSaleCard.getAttribute('data-testid');
-    const saleIdMatch = saleCardTestId?.match(/admin-sale-card-(.+)/);
-    if (!saleIdMatch || !saleIdMatch[1]) {
-      console.log(`⚠️ Could not extract sale ID from card testid: ${saleCardTestId}`);
-      test.skip(true, 'Could not extract sale ID from sale card');
-      return;
+    // Wait for the test sale to appear in the list (with retries)
+    let testSaleCard = page.locator(TestSelectors.adminSaleCard(testSaleId));
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    while (attempts < maxAttempts && (await testSaleCard.count()) === 0) {
+      await page.waitForTimeout(2000);
+      await page.reload();
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+      testSaleCard = page.locator(TestSelectors.adminSaleCard(testSaleId));
+      attempts++;
     }
-    const saleId = saleIdMatch[1];
 
-    const statusSelect = page.locator(TestSelectors.adminSaleStatusSelect(saleId));
+    // ============================================================================
+    // SECTION 2: Find Test Sale and Change Status to "cancelado"
+    // ============================================================================
+    console.log('🔍 Section 2: Finding test sale and updating status to "cancelado"');
+
+    // Find our test sale by ID
+    await expect(testSaleCard).toBeVisible({ timeout: 10000 });
+
+    const statusSelect = page.locator(TestSelectors.adminSaleStatusSelect(testSaleId));
     await expect(statusSelect).toBeVisible({ timeout: 10000 });
 
     const originalStatus = await statusSelect.inputValue();
-    console.log(`📦 Original sale status: ${originalStatus}`);
+    console.log(`📦 Test sale status: ${originalStatus} (expected: pendiente)`);
 
-    // If already "cancelado", temporarily change to another status then back to "cancelado"
-    if (originalStatus !== 'cancelado') {
-      // Set to cancelado directly
-      await statusSelect.selectOption('cancelado');
-      // Wait for the select value to actually change (React state update + re-render)
-      await expect(statusSelect).toHaveValue('cancelado', { timeout: 10000 });
-      console.log('✅ Sale status updated to "cancelado"');
-    } else {
-      // Change to pendiente then back to cancelado to exercise control
-      await statusSelect.selectOption('pendiente');
-      // Wait for the select value to actually change
-      await expect(statusSelect).toHaveValue('pendiente', { timeout: 10000 });
-      console.log('✅ Sale status temporarily changed to "pendiente"');
+    // Update to "cancelado"
+    await statusSelect.selectOption('cancelado');
+    // Wait for the select value to actually change (React state update + re-render)
+    await expect(statusSelect).toHaveValue('cancelado', { timeout: 10000 });
+    console.log('✅ Test sale status updated to "cancelado"');
 
-      await statusSelect.selectOption('cancelado');
-      // Wait for the select value to actually change back
-      await expect(statusSelect).toHaveValue('cancelado', { timeout: 10000 });
-      console.log('✅ Sale status changed back to "cancelado"');
-    }
-
-    // Restore original status if it was not "cancelado" to avoid persistent changes
-    if (originalStatus !== 'cancelado') {
-      await statusSelect.selectOption(originalStatus);
-      // Wait for the select value to actually change back to original
-      await expect(statusSelect).toHaveValue(originalStatus, { timeout: 10000 });
-      console.log(`✅ Sale status restored to original value "${originalStatus}"`);
-    }
-
-    console.log('✅ QA-65 status update to "cancelado" verified and original status restored when needed');
+    console.log('✅ QA-65 status update to "cancelado" verified');
   });
 });

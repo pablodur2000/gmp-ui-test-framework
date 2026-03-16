@@ -380,6 +380,107 @@ export async function cleanupTestCategory(categoryId: string): Promise<CleanupRe
   }
 }
 
+export interface CreateSaleResult {
+  success: boolean;
+  saleId?: string;
+  error?: string;
+}
+
+/**
+ * Create a test sale for testing purposes
+ * @param saleData - Sale data to create
+ * @returns Create result with sale ID
+ */
+export async function createTestSale(saleData: {
+  customer_name: string;
+  customer_email?: string;
+  customer_phone?: string;
+  total_amount: number;
+  status?: 'pendiente' | 'en_proceso' | 'completado' | 'cancelado';
+  notes?: string;
+  product_id?: string; // Optional: if provided, creates a sale_item
+  quantity?: number; // Optional: if product_id provided
+  unit_price?: number; // Optional: if product_id provided
+}): Promise<CreateSaleResult> {
+  try {
+    const supabase = await getSupabaseClient();
+    if (!supabase) {
+      return {
+        success: false,
+        error: 'Supabase credentials not configured'
+      };
+    }
+
+    // Ensure customer_name has TEST_ prefix for safety
+    const safeCustomerName = saleData.customer_name.startsWith('TEST_')
+      ? saleData.customer_name
+      : `TEST_${saleData.customer_name}`;
+
+    // Create sale
+    const saleEntry = {
+      customer_name: safeCustomerName,
+      customer_email: saleData.customer_email || null,
+      customer_phone: saleData.customer_phone || null,
+      total_amount: saleData.total_amount,
+      status: saleData.status || 'pendiente',
+      notes: saleData.notes || null,
+      sold: false
+    };
+
+    const { data: sale, error: saleError } = await supabase
+      .from('sales')
+      .insert([saleEntry])
+      .select()
+      .single();
+
+    if (saleError) {
+      console.error(`❌ Failed to create test sale: ${saleError.message}`);
+      return {
+        success: false,
+        error: saleError.message
+      };
+    }
+
+    if (!sale || !sale.id) {
+      return {
+        success: false,
+        error: 'Sale created but no ID returned'
+      };
+    }
+
+    // Create sale_item if product_id provided
+    if (saleData.product_id) {
+      const subtotal = (saleData.unit_price || 0) * (saleData.quantity || 1);
+      const { error: itemError } = await supabase
+        .from('sales_items')
+        .insert([{
+          sale_id: sale.id,
+          product_id: saleData.product_id,
+          quantity: saleData.quantity || 1,
+          unit_price: saleData.unit_price || 0,
+          subtotal: subtotal
+        }]);
+
+      if (itemError) {
+        console.warn(`⚠️ Failed to create sale item: ${itemError.message}`);
+        // Sale was created, so we still return success but log the warning
+      }
+    }
+
+    console.log(`✅ Created test sale: ${safeCustomerName} (${sale.id})`);
+    return {
+      success: true,
+      saleId: sale.id
+    };
+  } catch (error: any) {
+    console.error(`❌ Error creating test sale: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 /**
  * Delete a sale by ID
  * @param saleId - Sale ID to delete
@@ -446,6 +547,107 @@ export async function cleanupTestSale(saleId: string): Promise<CleanupResult> {
       error: error.message,
       resourceType: 'sale',
       resourceId: saleId
+    };
+  }
+}
+
+export interface CreateActivityLogResult {
+  success: boolean;
+  activityLogId?: string;
+  error?: string;
+}
+
+/**
+ * Create a test activity log for testing purposes
+ * @param activityLogData - Activity log data to create
+ * @returns Create result with activity log ID
+ */
+export async function createTestActivityLog(activityLogData: {
+  action_type: 'CREATE' | 'UPDATE' | 'DELETE';
+  resource_type: 'PRODUCT' | 'SALE' | 'CATEGORY';
+  resource_id?: string;
+  resource_name?: string;
+  details?: any;
+}): Promise<CreateActivityLogResult> {
+  try {
+    const supabase = await getSupabaseClient();
+    if (!supabase) {
+      return {
+        success: false,
+        error: 'Supabase credentials not configured'
+      };
+    }
+
+    // Get current user (admin) for activity log
+    const adminEmail = process.env.TEST_ADMIN_EMAIL;
+    const adminPassword = process.env.TEST_ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      return {
+        success: false,
+        error: 'TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD required for creating activity logs'
+      };
+    }
+
+    // Authenticate to get user info
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: adminEmail,
+      password: adminPassword
+    });
+
+    if (authError || !authData.user) {
+      return {
+        success: false,
+        error: `Failed to authenticate: ${authError?.message || 'No user returned'}`
+      };
+    }
+
+    // Ensure resource_name has TEST_ prefix for safety
+    const safeResourceName = activityLogData.resource_name?.startsWith('TEST_')
+      ? activityLogData.resource_name
+      : `TEST_${activityLogData.resource_name || 'Test Activity'}`;
+
+    const logEntry = {
+      user_id: authData.user.id,
+      user_email: authData.user.email,
+      action_type: activityLogData.action_type,
+      resource_type: activityLogData.resource_type,
+      resource_id: activityLogData.resource_id || null,
+      resource_name: safeResourceName,
+      details: activityLogData.details || null
+    };
+
+    const { data, error } = await supabase
+      .from('activity_logs')
+      .insert([logEntry])
+      .select()
+      .single();
+
+    if (error) {
+      console.error(`❌ Failed to create test activity log: ${error.message}`);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+
+    if (!data || !data.id) {
+      return {
+        success: false,
+        error: 'Activity log created but no ID returned'
+      };
+    }
+
+    console.log(`✅ Created test activity log: ${safeResourceName} (${data.id})`);
+    return {
+      success: true,
+      activityLogId: data.id
+    };
+  } catch (error: any) {
+    console.error(`❌ Error creating test activity log: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
     };
   }
 }
