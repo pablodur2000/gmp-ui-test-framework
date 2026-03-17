@@ -178,6 +178,7 @@ export const TestSelectors = {
   adminDeleteProductConfirmationModalConfirmButton: '[data-testid="admin-delete-product-confirmation-modal-confirm-button"]',
   
   // Products Catalog
+  adminProductsViewHeader: '[data-testid="admin-products-view-header"]',
   adminProductsCatalogContent: '[data-testid="admin-products-catalog-content"]',
   adminProductSearchInput: '[data-testid="admin-product-search-input"]',
   adminExportProductsButton: '[data-testid="admin-export-products-button"]',
@@ -209,6 +210,26 @@ export const TestSelectors = {
   adminActivityDetails: (id: string | number) => `[data-testid="admin-activity-details-${id}"]`,
   adminActivityDeleteButton: (id: string | number) => `[data-testid="admin-activity-delete-button-${id}"]`,
   adminActivityEmptyState: '[data-testid="admin-activity-empty-state"]',
+  
+  // Category Management
+  adminManageCategoriesButton: '[data-testid="admin-manage-categories-button"]',
+  adminCategoriesView: '[data-testid="admin-categories-view"]',
+  adminCategoriesViewHeader: '[data-testid="admin-categories-view-header"]',
+  adminCategoryGroupCuero: '[data-testid="admin-category-group-cuero"]',
+  adminCategoryGroupMacrame: '[data-testid="admin-category-group-macrame"]',
+  adminCategoryGroupHeadingCuero: '[data-testid="admin-category-group-heading-cuero"]',
+  adminCategoryGroupHeadingMacrame: '[data-testid="admin-category-group-heading-macrame"]',
+  adminCategoryCard: (id: string | number) => `[data-testid="admin-category-card-${id}"]`,
+  adminCategoryName: (id: string | number) => `[data-testid="admin-category-name-${id}"]`,
+  adminCategoryDescription: (id: string | number) => `[data-testid="admin-category-description-${id}"]`,
+  adminCategoryProductCount: (id: string | number) => `[data-testid="admin-category-product-count-${id}"]`,
+  adminCategoryMainCategoryBadge: (id: string | number) => `[data-testid="admin-category-main-category-badge-${id}"]`,
+  adminCategoriesLoading: '[data-testid="admin-categories-loading"]',
+  adminCategoriesEmptyState: '[data-testid="admin-categories-empty-state"]',
+  adminCategorySearchInput: '[data-testid="admin-category-search-input"]',
+  adminAddCategoryButton: '[data-testid="admin-add-category-button"]',
+  adminEditCategoryButton: (id: string | number) => `[data-testid="admin-edit-category-button-${id}"]`,
+  adminDeleteCategoryButton: (id: string | number) => `[data-testid="admin-delete-category-button-${id}"]`,
 } as const;
 
 /**

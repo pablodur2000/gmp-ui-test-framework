@@ -12,7 +12,8 @@ Before creating a new test, ensure you have:
 - [ ] QA ticket created in Jira (Epic → Story)
 - [ ] QA ticket markdown file in `possible_tickets/` folder
 - [ ] Understanding of what to test (read the ticket)
-- [ ] Required `data-testid` attributes identified (or fallback selectors)
+- [ ] **Required `data-testid` attributes added to base code (gmp-web-app)** ⚠️ CRITICAL
+- [ ] Selectors added to `tests/utils/selectors.ts`
 - [ ] Test file location determined (`tests/smoke/` or `tests/e2e/public/` or `tests/e2e/admin/`)
 
 ---
@@ -156,15 +157,30 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
 
 ## 🎯 Step 3: Selector Patterns
 
-### Pattern 1: Primary with Fallback (Most Common)
+### ⚠️ CRITICAL RULE: NO FALLBACK SELECTORS
+
+**ALWAYS add `data-testid` attributes to the base code (gmp-web-app) before writing tests.**
+
+**DO NOT use `.or()` fallback selectors. If a `data-testid` doesn't exist, add it to the source code first.**
+
+### Pattern 1: Using data-testid Selectors (REQUIRED)
 
 ```typescript
-// ✅ GOOD - Primary selector with fallback
+// ✅ GOOD - Use data-testid selector from TestSelectors
+const productCard = page.locator(TestSelectors.catalogProductCard);
+await expect(productCard).toBeVisible();
+
+// ❌ BAD - DO NOT use fallback selectors
 const productCard = page.locator(TestSelectors.catalogProductCard).or(
   page.locator('.product-card').first()
 );
-await expect(productCard).toBeVisible();
 ```
+
+**Before writing a test:**
+1. Search the base code (gmp-web-app) for the UI element
+2. Add the required `data-testid` attribute to the element
+3. Add the selector to `tests/utils/selectors.ts`
+4. Then write the test using only the `data-testid` selector
 
 ### Pattern 2: Scoped Selectors (Critical - Prevents Strict Mode Violations)
 
@@ -172,12 +188,12 @@ await expect(productCard).toBeVisible();
 // ❌ BAD - May match multiple elements
 const filterButton = page.locator(TestSelectors.catalogFilterButton);
 
-// ✅ GOOD - Scoped to parent
-const catalogPage = page.locator(TestSelectors.catalogPage).or(
-  page.locator('[data-testid*="catalog"]').first()
-);
+// ✅ GOOD - Scoped to parent using data-testid
+const catalogPage = page.locator(TestSelectors.catalogPage);
 const filterButton = catalogPage.locator(TestSelectors.catalogFilterButton);
 ```
+
+**Note:** If you need to scope selectors, ensure both the parent and child have `data-testid` attributes in the base code.
 
 ### Pattern 3: Conditional Elements (For Optional Features)
 
@@ -355,9 +371,8 @@ await page.waitForLoadState('networkidle');
 ### Form Input
 
 ```typescript
-const searchInput = page.locator(TestSelectors.catalogSearchInput).or(
-  page.getByPlaceholder(/buscar/i)
-);
+// ✅ GOOD - Use data-testid selector
+const searchInput = page.locator(TestSelectors.catalogSearchInput);
 await searchInput.fill('test search');
 await searchInput.press('Enter');
 await page.waitForLoadState('networkidle');
@@ -662,8 +677,8 @@ test.describe('CatalogPage - Loads and Displays All Products', () => {
 // ❌ Hardcoded URLs
 await page.goto('http://localhost:5173/gmp-web-app/catalogo');
 
-// ❌ No fallback selectors
-const element = page.locator(TestSelectors.xxx);
+// ❌ Fallback selectors (NOT ALLOWED)
+const element = page.locator(TestSelectors.xxx).or(page.locator('fallback'));
 
 // ❌ Unscoped selectors (strict mode violations)
 const button = page.locator('button');
@@ -685,10 +700,10 @@ page.on('response', ...); // Too late!
 // ✅ Navigation helpers
 await navigateToCatalog(page);
 
-// ✅ Fallback selectors
-const element = page.locator(TestSelectors.xxx).or(page.locator('fallback'));
+// ✅ data-testid selectors ONLY (add to base code first if missing)
+const element = page.locator(TestSelectors.xxx);
 
-// ✅ Scoped selectors
+// ✅ Scoped selectors (both parent and child must have data-testid)
 const parent = page.locator(TestSelectors.parent);
 const button = parent.locator(TestSelectors.button);
 
@@ -739,7 +754,8 @@ Before submitting your test:
 - [ ] JSDoc header includes all required information
 - [ ] All imports are correct
 - [ ] Section comments are clear and descriptive
-- [ ] Selectors use `TestSelectors` with fallbacks
+- [ ] **Selectors use `TestSelectors` with data-testid ONLY (NO fallbacks)** ⚠️ CRITICAL
+- [ ] All required `data-testid` attributes exist in base code (gmp-web-app)
 - [ ] Selectors are scoped to prevent strict mode violations
 - [ ] Waits use utility functions when possible
 - [ ] API listeners are set up BEFORE actions
