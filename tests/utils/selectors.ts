@@ -230,6 +230,17 @@ export const TestSelectors = {
   adminAddCategoryButton: '[data-testid="admin-add-category-button"]',
   adminEditCategoryButton: (id: string | number) => `[data-testid="admin-edit-category-button-${id}"]`,
   adminDeleteCategoryButton: (id: string | number) => `[data-testid="admin-delete-category-button-${id}"]`,
+  adminCategoryCreateModal: '[data-testid="admin-category-create-modal"]',
+  adminCategoryForm: '[data-testid="admin-category-form"]',
+  adminCategoryFormModalTitle: '[data-testid="admin-category-form-modal-title"]',
+  adminCategoryFormModalCloseButton: '[data-testid="admin-category-form-modal-close-button"]',
+  adminCategoryFormNameInput: '[data-testid="admin-category-form-name-input"]',
+  adminCategoryFormDescriptionInput: '[data-testid="admin-category-form-description-input"]',
+  adminCategoryFormMainCategorySelect: '[data-testid="admin-category-form-main-category-select"]',
+  adminCategoryFormNameError: '[data-testid="admin-category-form-name-error"]',
+  adminCategoryFormDescriptionError: '[data-testid="admin-category-form-description-error"]',
+  adminCategoryFormMainCategoryError: '[data-testid="admin-category-form-main-category-error"]',
+  adminCategoryFormSubmitButton: '[data-testid="admin-category-form-submit-button"]',
 } as const;
 
 /**
